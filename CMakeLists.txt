@@ -12,7 +12,7 @@ endif()
 project ("codegen-coursework")
 
 # Добавьте источник в исполняемый файл этого проекта.
-add_executable (codegen-coursework "codegen-coursework.cpp" "codegen-coursework.h")
+add_executable (codegen-coursework "src/codegen-coursework.cpp" "src/codegen-coursework.h" "src/dynarray.h" "src/string.h")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET codegen-coursework PROPERTY CXX_STANDARD 20)
