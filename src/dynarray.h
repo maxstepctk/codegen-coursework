@@ -17,7 +17,13 @@ public:
         array = new T[capacity];
     }
 
-    DynArray(const dynamic<T>& arr2)
+    DynArray(int neededCapacity)
+    {
+        capacity = neededCapacity;
+        array = new T[neededCapacity];
+    }
+
+    DynArray(const DynArray<T>& arr2)
     {
         int size2 = arr2.sizearr;
         sizearr = size2;
