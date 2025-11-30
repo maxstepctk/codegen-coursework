@@ -28,7 +28,7 @@ public:
 		return (*string)[n];
 	}
 
-	void addBack(char elem)
+	void addSym(char elem)
 	{
 		string->push_back(elem);
 	}

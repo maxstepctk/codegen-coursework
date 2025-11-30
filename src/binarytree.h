@@ -7,8 +7,6 @@ template <typename T>
 class BinaryTree
 {
 private:
-    BinaryTree* left = nullptr;
-    BinaryTree* right = nullptr;
     int sizetree;
     void addtree(const BinaryTree* tree2)
     {
@@ -52,6 +50,8 @@ private:
             return false;
     }
 public:
+    BinaryTree* left = nullptr;
+    BinaryTree* right = nullptr;
     T* info;
     BinaryTree()
     {
@@ -62,6 +62,13 @@ public:
     {
         info = new T(data);
         sizetree = 1;
+    }
+
+    void writeToHead(T data)
+    {
+        if (info != nullptr)
+            delete info;
+        info = new T(data);
     }
 
     void addElement(T data, bool side)
