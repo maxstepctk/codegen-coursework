@@ -6,7 +6,9 @@
 template <typename T>
 class BinaryTree
 {
-private:
+protected:
+    BinaryTree* left = nullptr;
+    BinaryTree* right = nullptr;
     int sizetree;
     void addtree(const BinaryTree* tree2)
     {
@@ -50,8 +52,6 @@ private:
             return false;
     }
 public:
-    BinaryTree* left = nullptr;
-    BinaryTree* right = nullptr;
     T* info;
     BinaryTree()
     {

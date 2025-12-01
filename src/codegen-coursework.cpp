@@ -39,44 +39,44 @@
 //		return false;
 //}
 
-void readBinTreeFromFile(BinaryTree<String>* tree, const char* filename)
-{
-	Stack<BinaryTree<String>*> s1;
-	s1.push(tree);
-	FILE* fp = fopen(filename, "r");
-	char* letter = new char('a');
-	String* tempstr = new String();
-	bool notStart = false;
-	bool lastIsClose = false;
-	if (fp)
-	{
-		while ((fgets(letter, 1, fp)) != NULL)
-		{
-			if (*letter == '(')
-			{
-				if (notStart)
-				{
-					s1.top()->writeToHead(*tempstr);
-					if (tempstr != nullptr)
-						delete tempstr;
-					tempstr = new String();
-					if (lastIsClose)
-						s1.push(s1.top()->right);
-					else
-						s1.push(s1.top()->left);
-				}
-			}
-			else if (*letter = ')')
-			{
-				s1.top()->writeToHead(*tempstr);
-				delete tempstr;
-				s1.pop();
-			}
-			else
-				tempstr->addSym(*letter);
-		}
-	}
-}
+//void readBinTreeFromFile(BinaryTree<String>* tree, const char* filename)
+//{
+//	Stack<BinaryTree<String>*> s1;
+//	s1.push(tree);
+//	FILE* fp = fopen(filename, "r");
+//	char* letter = new char('a');
+//	String* tempstr = new String();
+//	bool notStart = false;
+//	bool lastIsClose = false;
+//	if (fp)
+//	{
+//		while ((fgets(letter, 1, fp)) != NULL)
+//		{
+//			if (*letter == '(')
+//			{
+//				if (notStart)
+//				{
+//					s1.top()->writeToHead(*tempstr);
+//					if (tempstr != nullptr)
+//						delete tempstr;
+//					tempstr = new String();
+//					if (lastIsClose)
+//						s1.push(s1.top()->right);
+//					else
+//						s1.push(s1.top()->left);
+//				}
+//			}
+//			else if (*letter = ')')
+//			{
+//				s1.top()->writeToHead(*tempstr);
+//				delete tempstr;
+//				s1.pop();
+//			}
+//			else
+//				tempstr->addSym(*letter);
+//		}
+//	}
+//}
 
 int main()
 {
@@ -85,8 +85,9 @@ int main()
 	str1.addSym('a');
 	str1.addSym('b');
 	str1[0] = 'c';
-	BinaryTree<String>* sintaxTree = new BinaryTree<String>();
-	readBinTreeFromFile(sintaxTree, filename);
-	std::cout << sintaxTree << std::endl;
+	//BinaryTree<String>* sintaxTree = new BinaryTree<String>();
+	//readBinTreeFromFile(sintaxTree, filename);
+	//std::cout << sintaxTree << std::endl;
+	SyntaxTree* tree1 = new SyntaxTree(filename);
 	return 0;
 }
