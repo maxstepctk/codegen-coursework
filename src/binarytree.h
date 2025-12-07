@@ -184,28 +184,28 @@ public:
     {
         return (sizetree == 0);
     }
-    std::string printsubtree(const BinaryTree* tree)
-    {
-        std::string str1;
-        str1.append(std::to_string(*tree->info));
-        str1.append("(");
-        if (tree->left != nullptr)
-            str1.append(printsubtree(tree->left));
-        str1.append(")(");
-        if (tree->right != nullptr)
-            str1.append(printsubtree(tree->right));
-        str1.append(")");
-        return str1;
-    }
+    //std::string printsubtree(const BinaryTree* tree)
+    //{
+    //    std::string str1;
+    //    str1.append(std::to_string(*tree->info));
+    //    str1.append("(");
+    //    if (tree->left != nullptr)
+    //        str1.append(printsubtree(tree->left));
+    //    str1.append(")(");
+    //    if (tree->right != nullptr)
+    //        str1.append(printsubtree(tree->right));
+    //    str1.append(")");
+    //    return str1;
+    //}
     bool operator ==(BinaryTree<T>& tree2)
     {
         return cmp(this, &tree2);
     }
 };
 
-template <typename T>
-std::ostream& operator <<(std::ostream& out, BinaryTree<T>& tree)
-{
-    out << tree.printsubtree(&tree);
-    return out;
-}
+//template <typename T>
+//std::ostream& operator <<(std::ostream& out, BinaryTree<T>& tree)
+//{
+//    out << tree.printsubtree(&tree);
+//    return out;
+//}

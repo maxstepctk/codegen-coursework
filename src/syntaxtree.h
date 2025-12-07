@@ -7,6 +7,9 @@
 
 class SyntaxTree : public BinaryTree<String>
 {
+protected:
+	SyntaxTree* left = nullptr;
+	SyntaxTree* right = nullptr;
 public:
 	SyntaxTree() : BinaryTree<String>() {}
 
@@ -44,36 +47,70 @@ public:
 
 	bool readFromFile(const char* filename)
 	{
-		Stack<BinaryTree<String>*> s1;
+		Stack<SyntaxTree*> s1;
 		s1.push(this);
 		String* readedstr = readStringFromFile(filename);
 		if (readedstr == nullptr)
 			return false;
 		else
 		{
+			bool isStart = true;
+			String* tempstr = nullptr;
 			std::cout << *readedstr << std::endl;
+			info = new String(*readedstr);
+			//for (int i = 0; i < readedstr->size(); i++)
+			//{
+			//	std::cout << i << std::endl;
+			//	SyntaxTree* editingTree = s1.top();
+			//	std::cout << *readedstr << std::endl;
+		//		if ((*readedstr)[i] == '(')
+		//		{
+		//			if (editingTree->info == nullptr)
+		//			{
+		//				if (isStart == false)
+		//				{
+		//					info = new String(tempstr);
+		//					delete tempstr;
+		//					left = new SyntaxTree;
+		//					s1.push(left);
+		//				}
+		//				tempstr = new String();
+		//			}
+		//			else
+		//			{
+		//				right = new SyntaxTree;
+		//				s1.push(right);
+		//			}
+		//		}
+		//		else if ((*readedstr)[i] == ')')
+		//		{
+		//			info = new String(tempstr);
+		//			delete tempstr;
+		//			tempstr = new String();
+		//			s1.pop();
+		//		}
+		//		else
+		//			tempstr->addSym((*readedstr)[i]);
+		//	}
 		}
-			//	if (*letter == '(')
-			//	{
-			//		if (notStart)
-			//		{
-			//			s1.top()->writeToHead(*tempstr);
-			//			if (tempstr != nullptr)
-			//				delete tempstr;
-			//			tempstr = new String();
-			//			if (lastIsClose)
-			//				s1.push(s1.top()->right);
-			//			else
-			//				s1.push(s1.top()->left);
-			//		}
-			//	}
-			//	else if (*letter = ')')
-			//	{
-			//		s1.top()->writeToHead(*tempstr);
-			//		delete tempstr;
-			//		s1.pop();
-			//	}
-			//	else
-			//		tempstr->addSym(*letter);
+	}
+	std::string printsubtree(const SyntaxTree* tree)
+	{
+		std::string str1;
+		str1.append(tree->info->toString());
+		str1.append("(");
+		if (tree->left != nullptr)
+			str1.append(printsubtree(tree->left));
+		str1.append(")(");
+		if (tree->right != nullptr)
+			str1.append(printsubtree(tree->right));
+		str1.append(")");
+		return str1;
 	}
 };
+
+std::ostream& operator <<(std::ostream& out, SyntaxTree& tree)
+{
+    out << tree.printsubtree(&tree);
+    return out;
+}

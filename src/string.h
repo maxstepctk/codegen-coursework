@@ -1,6 +1,7 @@
 #pragma once
 #include "dynarray.h"
 #include <iostream>
+#include <string>
 
 class String
 {
@@ -16,6 +17,14 @@ public:
 	String(int neededCapacity)
 	{
 		string = new DynArray<char>(neededCapacity);
+	}
+
+	String(String* str2)
+	{
+		string = new DynArray<char>((str2->size()) * 2);
+		int str2size = str2->size();
+		for (int i = 0; i < str2size; i++)
+			this->addSym((*str2)[i]);
 	}
 
 	~String()
@@ -46,6 +55,14 @@ public:
 	int size()
 	{
 		return string->size();
+	}
+
+	std::string toString()
+	{
+		std::string str1;
+		for (int i = 0; i < this->size(); i++)
+			str1.append(std::to_string((*this)[i]));
+		return str1;
 	}
 };
 

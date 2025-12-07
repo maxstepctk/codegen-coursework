@@ -80,14 +80,14 @@
 
 int main()
 {
-	const char* filename = "C:/Users/MaxStep/Downloads/Telegram Desktop/syntax_tree (2).txt";
+	const char* filename = "C:/Users/MaxStep/Downloads/Telegram Desktop/syntax_tree (3).txt";
 	String str1;
 	str1.addSym('a');
 	str1.addSym('b');
 	str1[0] = 'c';
 	//BinaryTree<String>* sintaxTree = new BinaryTree<String>();
 	//readBinTreeFromFile(sintaxTree, filename);
-	//std::cout << sintaxTree << std::endl;
 	SyntaxTree* tree1 = new SyntaxTree(filename);
+	std::cout << *tree1 << std::endl;
 	return 0;
 }
