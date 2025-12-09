@@ -1,4 +1,5 @@
 ﻿#include "codegen-coursework.h"
+#include <locale>
 
 //bool readBinTreeFromFile(BinaryTree<String>* tree, const char* filename)
 //{
@@ -80,7 +81,8 @@
 
 int main()
 {
-	const char* filename = "C:/Users/MaxStep/Downloads/Telegram Desktop/syntax_tree (3).txt";
+	setlocale(LC_ALL, "Rus");
+	const char* filename = "C:\\Users\\MaxStep\\source\\repos\\syntax\\syntax\\syntax_tree.txt";
 	String str1;
 	str1.addSym('a');
 	str1.addSym('b');

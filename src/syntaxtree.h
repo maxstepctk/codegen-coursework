@@ -17,6 +17,8 @@ public:
 
 	SyntaxTree(const char* filename)
 	{
+		info = nullptr;
+		sizetree = 0;
 		readFromFile(filename);
 	}
 
@@ -49,49 +51,87 @@ public:
 	{
 		Stack<SyntaxTree*> s1;
 		s1.push(this);
+		std::cout << s1.top()->info << std::endl;
 		String* readedstr = readStringFromFile(filename);
 		if (readedstr == nullptr)
 			return false;
 		else
 		{
 			bool isStart = true;
+			bool lastIsClose = false;
 			String* tempstr = nullptr;
-			std::cout << *readedstr << std::endl;
-			info = new String(*readedstr);
-			//for (int i = 0; i < readedstr->size(); i++)
-			//{
-			//	std::cout << i << std::endl;
-			//	SyntaxTree* editingTree = s1.top();
-			//	std::cout << *readedstr << std::endl;
-		//		if ((*readedstr)[i] == '(')
-		//		{
-		//			if (editingTree->info == nullptr)
-		//			{
-		//				if (isStart == false)
-		//				{
-		//					info = new String(tempstr);
-		//					delete tempstr;
-		//					left = new SyntaxTree;
-		//					s1.push(left);
-		//				}
-		//				tempstr = new String();
-		//			}
-		//			else
-		//			{
-		//				right = new SyntaxTree;
-		//				s1.push(right);
-		//			}
-		//		}
-		//		else if ((*readedstr)[i] == ')')
-		//		{
-		//			info = new String(tempstr);
-		//			delete tempstr;
-		//			tempstr = new String();
-		//			s1.pop();
-		//		}
-		//		else
-		//			tempstr->addSym((*readedstr)[i]);
-		//	}
+			//std::cout << (*readedstr) << std::endl;
+			for (int i = 0; i < readedstr->size(); i++)
+			{
+				std::cout << "символ " << (*readedstr)[i] << std::endl;
+				//std::cout << i << std::endl;
+				SyntaxTree* editingTree = s1.top();
+				std::cout << "Размер стека: " << s1.size() << " Редкатируемое дерево: " << editingTree << std::endl;
+				//std::cout << "инфо " << * editingTree->info << std::endl;
+				//std::cout << *readedstr << std::endl;
+				if ((*readedstr)[i] == '(')
+				{
+					std::cout << "прочитал скобку, итерация " << i << std::endl;
+					if (editingTree->info == nullptr)
+					{
+						if (!(isStart || lastIsClose))
+						{
+							if (!lastIsClose)
+							{
+								info = new String(tempstr);
+								std::cout << "Записал в info" << std::endl;
+							}
+							delete tempstr;
+							editingTree->left = new SyntaxTree;
+							s1.push(editingTree->left);
+						}
+						else
+							isStart = true;
+						std::cout << "пытаюсь создать строку" << std::endl;
+						tempstr = new String();
+						std::cout << "end '('" << std::endl;
+					}
+					else
+					{
+						if (lastIsClose)
+						{
+							std::cout << "Пушим вправо" << std::endl;
+							editingTree->right = new SyntaxTree;
+							s1.push(editingTree->right);
+						}
+						else
+						{
+							std::cout << "Пушим влево" << std::endl;
+							editingTree->left = new SyntaxTree;
+							s1.push(editingTree->left);
+						}
+					}
+					lastIsClose = false;
+				}
+				else if ((*readedstr)[i] == ')')
+				{
+					std::cout << "in ')'" << tempstr << std::endl;
+					if (tempstr != nullptr)
+					{
+						if (!tempstr->isEmpty())
+						{
+							info = new String(tempstr);
+							std::cout << "Записал в info" << std::endl;
+							delete tempstr;
+							tempstr = new String();
+						}
+					}
+					else
+						tempstr = new String();
+					lastIsClose = true;
+					s1.pop();
+				}
+				else
+				{
+					tempstr->addSym((*readedstr)[i]);
+					lastIsClose = false;
+				}
+			}
 		}
 	}
 	std::string printsubtree(const SyntaxTree* tree)
