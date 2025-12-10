@@ -24,33 +24,12 @@ public:
 
 	~SyntaxTree() {};
 
-	String* readStringFromFile(const char* filename)
-	{
-		String* tempstr = new String();
-		char buffer[256];
-		FILE* fp = fopen(filename, "r");
-		if (fp)
-		{
-			while ((fgets(buffer, 256, fp)) != NULL)
-			{
-				for (int i = 0; (i < 256) && (buffer[i] != NULL); i++)
-					tempstr->addSym(buffer[i]);
-				for (int i = 0; i < 256; i++)
-					buffer[i] = NULL;
-			}
-			return tempstr;
-		}
-		else
-		{
-			delete tempstr;
-			std::cerr << "Ошибка чтения файла";
-		}
-	}
+
 
 	bool readFromFile(const char* filename)
 	{
 		Stack<SyntaxTree*> s1;
-		String* readedStr = readStringFromFile(filename);
+		String* readedStr = new String(filename);
 		if (readedStr == nullptr)
 			return false;
 		else
@@ -70,17 +49,14 @@ public:
 					{
 						if (lastIsClose)
 						{
-							std::cout << "\n\nИду направо" << std::endl;
 							editingTree->right = new SyntaxTree();
 							s1.push(editingTree->right);
 						}
 						else
 						{
-							std::cout << "Записываю: " << *tempStr << std::endl;
 							editingTree->info = new String(tempStr);
 							delete tempStr;
 							tempStr = new String();
-							std::cout << "\n\nИду налево" << std::endl;
 							editingTree->left = new SyntaxTree();
 							s1.push(editingTree->left);
 						}
@@ -96,7 +72,6 @@ public:
 						delete tempStr;
 						tempStr = new String();
 					}
-					std::cout << "Поднимаюсь" << std::endl;
 					s1.pop();
 					lastIsClose = true;
 				}

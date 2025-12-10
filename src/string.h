@@ -8,6 +8,29 @@ class String
 private:
 	DynArray<char>* string;
 
+	DynArray<char>* readFromFile(const char* filename)
+	{
+		DynArray<char>* tempstr = new DynArray<char>();
+		char buffer[256];
+		FILE* fp = fopen(filename, "r");
+		if (fp)
+		{
+			while ((fgets(buffer, 256, fp)) != NULL)
+			{
+				for (int i = 0; (i < 256) && (buffer[i] != NULL); i++)
+					tempstr->push_back(buffer[i]);
+				for (int i = 0; i < 256; i++)
+					buffer[i] = NULL;
+			}
+			return tempstr;
+		}
+		else
+		{
+			delete tempstr;
+			std::cerr << "Ошибка чтения файла";
+		}
+	}
+
 public:
 	String()
 	{
@@ -23,6 +46,11 @@ public:
 	{
 		string = new DynArray<char>(str2->size() * 2);
 		this->addString(str2);
+	}
+
+	String(const char* filename)
+	{
+		string = readFromFile(filename);
 	}
 
 	~String()
