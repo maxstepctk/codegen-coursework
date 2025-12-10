@@ -1,7 +1,6 @@
 #pragma once
 #include "dynarray.h"
 #include <iostream>
-//#include <string>
 
 class String
 {

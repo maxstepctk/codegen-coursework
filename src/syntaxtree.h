@@ -10,21 +10,6 @@ class SyntaxTree : public BinaryTree<String>
 protected:
 	SyntaxTree* left = nullptr;
 	SyntaxTree* right = nullptr;
-public:
-	SyntaxTree() : BinaryTree<String>() {}
-
-	SyntaxTree(String data) : BinaryTree<String>(data) {};
-
-	SyntaxTree(const char* filename)
-	{
-		info = nullptr;
-		sizetree = 0;
-		readFromFile(filename);
-	}
-
-	~SyntaxTree() {};
-
-
 
 	bool readFromFile(const char* filename)
 	{
@@ -83,6 +68,20 @@ public:
 			}
 		}
 	}
+
+public:
+	SyntaxTree() : BinaryTree<String>() {}
+
+	SyntaxTree(String data) : BinaryTree<String>(data) {};
+
+	SyntaxTree(const char* filename)
+	{
+		info = nullptr;
+		sizetree = 0;
+		readFromFile(filename);
+	}
+
+	~SyntaxTree() {};
 
 	String* printsubtree(const SyntaxTree* tree)
 	{
