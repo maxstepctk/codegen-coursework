@@ -1,7 +1,7 @@
 #pragma once
 #include "dynarray.h"
 #include <iostream>
-#include <string>
+//#include <string>
 
 class String
 {
@@ -21,10 +21,8 @@ public:
 
 	String(String* str2)
 	{
-		string = new DynArray<char>((str2->size()) * 2);
-		int str2size = str2->size();
-		for (int i = 0; i < str2size; i++)
-			this->addSym((*str2)[i]);
+		string = new DynArray<char>(str2->size() * 2);
+		this->addString(str2);
 	}
 
 	~String()
@@ -42,6 +40,13 @@ public:
 		string->push_back(elem);
 	}
 
+	void addString(String* str2)
+	{
+		int str2Size = str2->size();
+		for (int i = 0; i < str2Size; i++)
+			string->push_back((*str2)[i]);
+	}
+
 	void removeBack()
 	{
 		string->pop_back();
@@ -57,13 +62,13 @@ public:
 		return string->size();
 	}
 
-	std::string toString()
-	{
-		std::string str1;
-		for (int i = 0; i < this->size(); i++)
-			str1.append(std::to_string((*this)[i]));
-		return str1;
-	}
+	//std::string toString()
+	//{
+	//	std::string str1;
+	//	for (int i = 0; i < this->size(); i++)
+	//		str1.append(std::to_string((*this)[i]));
+	//	return str1;
+	//}
 };
 
 std::ostream& operator <<(std::ostream& out, String& str)

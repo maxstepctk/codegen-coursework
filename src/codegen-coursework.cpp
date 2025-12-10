@@ -1,84 +1,6 @@
 ﻿#include "codegen-coursework.h"
 #include <locale>
 
-//bool readBinTreeFromFile(BinaryTree<String>* tree, const char* filename)
-//{
-//	FILE* fp = fopen(filename, "r");
-//	char* letter = new char('a');
-//	String* tempstr = new String();
-//	bool isReading = false;
-//	bool treeSide = false;
-//	if (fp)
-//	{
-//		while ((fgets(letter, 1, fp)) != NULL)
-//		{
-//			if (*letter == '(')
-//			{
-//				treeSide = false;
-//				if (isReading)
-//				{
-//
-//					delete tempstr;
-//					tempstr = new String();
-//				}
-//				else
-//				{
-//					isReading = true;
-//				}
-//			}
-//			else if (*letter == ')')
-//			{
-//				treeSide = true;
-//				tree->addElement(*tempstr, treeSide);
-//			}
-//			else
-//				tempstr->addSym(*letter);
-//		}
-//		return true;
-//	}
-//	else
-//		return false;
-//}
-
-//void readBinTreeFromFile(BinaryTree<String>* tree, const char* filename)
-//{
-//	Stack<BinaryTree<String>*> s1;
-//	s1.push(tree);
-//	FILE* fp = fopen(filename, "r");
-//	char* letter = new char('a');
-//	String* tempstr = new String();
-//	bool notStart = false;
-//	bool lastIsClose = false;
-//	if (fp)
-//	{
-//		while ((fgets(letter, 1, fp)) != NULL)
-//		{
-//			if (*letter == '(')
-//			{
-//				if (notStart)
-//				{
-//					s1.top()->writeToHead(*tempstr);
-//					if (tempstr != nullptr)
-//						delete tempstr;
-//					tempstr = new String();
-//					if (lastIsClose)
-//						s1.push(s1.top()->right);
-//					else
-//						s1.push(s1.top()->left);
-//				}
-//			}
-//			else if (*letter = ')')
-//			{
-//				s1.top()->writeToHead(*tempstr);
-//				delete tempstr;
-//				s1.pop();
-//			}
-//			else
-//				tempstr->addSym(*letter);
-//		}
-//	}
-//}
-
 int main()
 {
 	setlocale(LC_ALL, "Rus");
@@ -90,6 +12,26 @@ int main()
 	//BinaryTree<String>* sintaxTree = new BinaryTree<String>();
 	//readBinTreeFromFile(sintaxTree, filename);
 	SyntaxTree* tree1 = new SyntaxTree(filename);
+	//SyntaxTree* tree2 = new SyntaxTree();
+	//Stack<SyntaxTree*> s1;
+	//std::cout << s1.top() << ", size = " << s1.size() << std::endl;
+	//s1.push(tree1);
+	//std::cout << s1.top() << ", size = " << s1.size() << std::endl;
+	//s1.push(tree2);
+	//std::cout << s1.top() << ", size = " << s1.size() << std::endl;
+	//s1.pop();
+	//std::cout << s1.top() << ", size = " << s1.size() << std::endl;
+	//SyntaxTree* editingTree = s1.top();
+	//editingTree->info = &str1;
+	//std::cout << *tree1->info << std::endl;
+	//s1.pop();
+	//std::cout << s1.top() << ", size = " << s1.size() << std::endl;
+	String str2;
+	str2.addSym('L');
+	String str3;
+	str3.addString(&str1);
+	str3.addString(&str2);
+	std::cout << str3 << std::endl;
 	std::cout << *tree1 << std::endl;
 	return 0;
 }

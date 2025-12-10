@@ -50,107 +50,92 @@ public:
 	bool readFromFile(const char* filename)
 	{
 		Stack<SyntaxTree*> s1;
-		s1.push(this);
-		std::cout << s1.top()->info << std::endl;
-		String* readedstr = readStringFromFile(filename);
-		if (readedstr == nullptr)
+		std::cout << "Адрес этого дерева: " << this << std::endl;
+		//int targetStackLevel = 1;
+		String* readedStr = readStringFromFile(filename);
+		if (readedStr == nullptr)
 			return false;
 		else
 		{
+			s1.push(this);
+			std::cout << s1.top()->info << std::endl;
+			String* tempStr = new String();
+			int readedStrSize = readedStr->size();
 			bool isStart = true;
 			bool lastIsClose = false;
-			String* tempstr = nullptr;
-			//std::cout << (*readedstr) << std::endl;
-			for (int i = 0; i < readedstr->size(); i++)
+			for (int i = 0; i < readedStrSize; i++)
 			{
-				std::cout << "символ " << (*readedstr)[i] << std::endl;
-				//std::cout << i << std::endl;
 				SyntaxTree* editingTree = s1.top();
-				std::cout << "Размер стека: " << s1.size() << " Редкатируемое дерево: " << editingTree << std::endl;
-				//std::cout << "инфо " << * editingTree->info << std::endl;
-				//std::cout << *readedstr << std::endl;
-				if ((*readedstr)[i] == '(')
+				char letter = (*readedStr)[i];
+				std::cout << letter << std::endl;
+				if (letter == '(')
 				{
-					std::cout << "прочитал скобку, итерация " << i << std::endl;
-					if (editingTree->info == nullptr)
+					isStart = false;
+					if (!isStart)
 					{
-						if (!(isStart || lastIsClose))
-						{
-							if (!lastIsClose)
-							{
-								info = new String(tempstr);
-								std::cout << "Записал в info" << std::endl;
-							}
-							delete tempstr;
-							editingTree->left = new SyntaxTree;
-							s1.push(editingTree->left);
-						}
-						else
-							isStart = true;
-						std::cout << "пытаюсь создать строку" << std::endl;
-						tempstr = new String();
-						std::cout << "end '('" << std::endl;
-					}
-					else
-					{
+						editingTree->info = new String(tempStr);
+						delete tempStr;
+						tempStr = new String();
 						if (lastIsClose)
 						{
-							std::cout << "Пушим вправо" << std::endl;
-							editingTree->right = new SyntaxTree;
+							editingTree->right = new SyntaxTree();
 							s1.push(editingTree->right);
 						}
 						else
 						{
-							std::cout << "Пушим влево" << std::endl;
-							editingTree->left = new SyntaxTree;
+							editingTree->left = new SyntaxTree();
 							s1.push(editingTree->left);
 						}
 					}
 					lastIsClose = false;
 				}
-				else if ((*readedstr)[i] == ')')
+				else if (letter == ')')
 				{
-					std::cout << "in ')'" << tempstr << std::endl;
-					if (tempstr != nullptr)
+					if (!lastIsClose)
 					{
-						if (!tempstr->isEmpty())
-						{
-							info = new String(tempstr);
-							std::cout << "Записал в info" << std::endl;
-							delete tempstr;
-							tempstr = new String();
-						}
+						editingTree->info = new String(tempStr);
+						delete tempStr;
+						tempStr = new String();
 					}
-					else
-						tempstr = new String();
-					lastIsClose = true;
 					s1.pop();
+					std::cout << "Размер стека: " << s1.size() << std::endl;
+					lastIsClose = true;
 				}
 				else
-				{
-					tempstr->addSym((*readedstr)[i]);
-					lastIsClose = false;
-				}
+					tempStr->addSym(letter);
 			}
 		}
 	}
-	std::string printsubtree(const SyntaxTree* tree)
+
+	String* printsubtree(const SyntaxTree* tree)
 	{
-		std::string str1;
-		str1.append(tree->info->toString());
-		str1.append("(");
+		String* str1 = new String();
+		str1->addString(tree->info);
+		str1->addSym('(');
 		if (tree->left != nullptr)
-			str1.append(printsubtree(tree->left));
-		str1.append(")(");
+		{
+			String* fromLeft = printsubtree(tree->left);
+			str1->addString(fromLeft);
+			delete fromLeft;
+		}
+		str1->addSym(')');
+		str1->addSym('(');
 		if (tree->right != nullptr)
-			str1.append(printsubtree(tree->right));
-		str1.append(")");
+		{
+			String* fromRight = printsubtree(tree->right);
+			str1->addString(fromRight);
+			delete fromRight;
+		}
+		str1->addSym(')');
 		return str1;
 	}
 };
 
 std::ostream& operator <<(std::ostream& out, SyntaxTree& tree)
 {
-    out << tree.printsubtree(&tree);
+	String* result = tree.printsubtree(&tree);
+	String toOut(result);
+	delete result;
+	out << toOut;
     return out;
 }

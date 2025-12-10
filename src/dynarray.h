@@ -25,7 +25,7 @@ public:
 
     DynArray(const DynArray<T>& arr2)
     {
-        int size2 = arr2.sizearr;
+        int size2 = arr2.size();
         sizearr = size2;
         capacity = size2 * 2;
         array = new T[capacity];
