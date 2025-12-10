@@ -50,15 +50,12 @@ public:
 	bool readFromFile(const char* filename)
 	{
 		Stack<SyntaxTree*> s1;
-		std::cout << "Адрес этого дерева: " << this << std::endl;
-		//int targetStackLevel = 1;
 		String* readedStr = readStringFromFile(filename);
 		if (readedStr == nullptr)
 			return false;
 		else
 		{
 			s1.push(this);
-			std::cout << s1.top()->info << std::endl;
 			String* tempStr = new String();
 			int readedStrSize = readedStr->size();
 			bool isStart = true;
@@ -67,26 +64,28 @@ public:
 			{
 				SyntaxTree* editingTree = s1.top();
 				char letter = (*readedStr)[i];
-				std::cout << letter << std::endl;
 				if (letter == '(')
 				{
-					isStart = false;
 					if (!isStart)
 					{
-						editingTree->info = new String(tempStr);
-						delete tempStr;
-						tempStr = new String();
 						if (lastIsClose)
 						{
+							std::cout << "\n\nИду направо" << std::endl;
 							editingTree->right = new SyntaxTree();
 							s1.push(editingTree->right);
 						}
 						else
 						{
+							std::cout << "Записываю: " << *tempStr << std::endl;
+							editingTree->info = new String(tempStr);
+							delete tempStr;
+							tempStr = new String();
+							std::cout << "\n\nИду налево" << std::endl;
 							editingTree->left = new SyntaxTree();
 							s1.push(editingTree->left);
 						}
 					}
+					isStart = false;
 					lastIsClose = false;
 				}
 				else if (letter == ')')
@@ -97,12 +96,15 @@ public:
 						delete tempStr;
 						tempStr = new String();
 					}
+					std::cout << "Поднимаюсь" << std::endl;
 					s1.pop();
-					std::cout << "Размер стека: " << s1.size() << std::endl;
 					lastIsClose = true;
 				}
 				else
+				{
 					tempStr->addSym(letter);
+					lastIsClose = false;
+				}
 			}
 		}
 	}
@@ -111,22 +113,22 @@ public:
 	{
 		String* str1 = new String();
 		str1->addString(tree->info);
-		str1->addSym('(');
 		if (tree->left != nullptr)
 		{
+			str1->addSym('(');
 			String* fromLeft = printsubtree(tree->left);
 			str1->addString(fromLeft);
 			delete fromLeft;
+			str1->addSym(')');
 		}
-		str1->addSym(')');
-		str1->addSym('(');
 		if (tree->right != nullptr)
 		{
+			str1->addSym('(');
 			String* fromRight = printsubtree(tree->right);
 			str1->addString(fromRight);
 			delete fromRight;
+			str1->addSym(')');
 		}
-		str1->addSym(')');
 		return str1;
 	}
 };
