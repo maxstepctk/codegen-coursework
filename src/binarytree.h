@@ -26,10 +26,19 @@ protected:
     {
         if (tree1->sizetree == tree2->sizetree)
         {
-            if (*tree1->info != *tree2->info)
+            if (*tree1->name != *tree2->name)
             {
                 return false;
             }
+
+            if ((tree1->value) != nullptr && (tree2->value != nullptr))
+            {
+                if (*tree1->value != *tree2->value)
+                {
+                    return false;
+                }
+            }
+
             if ((tree1->left != nullptr) && (tree2->left != nullptr))
             {
                 bool res = cmp(tree1->left, tree2->left);
@@ -52,31 +61,52 @@ protected:
             return false;
     }
 public:
-    T* info;
+    T* name = nullptr;
+    T* value = nullptr;
+
     BinaryTree()
     {
-        info = nullptr;
+        name = nullptr;
+        value = nullptr;
         sizetree = 0;
     }
     BinaryTree(T data)
     {
-        info = new T(data);
+        name = new T(data);
         sizetree = 1;
     }
 
-    void writeToHead(T data)
+    BinaryTree(T inpName, T inpValue)
     {
-        if (info != nullptr)
-            delete info;
-        info = new T(data);
+        name = new T(inpName);
+        value = new T(inpValue);
+        sizetree = 1;
     }
 
-    void addElement(T data, bool side)
+    void writeToHeadName(T data)
     {
-        if (info == nullptr)
+        if (name != nullptr)
+            delete name;
+        name = new T(data);
+    }
+
+    void writeToHead(T inpName, T inpValue)
+    {
+        if (name != nullptr)
+            delete name;
+        name = new T(inpName);
+        if (value != nullptr)
+            delete value;
+        value = new T(inpName);
+    }
+
+    void addElement(T inpName, T inpValue, bool side)
+    {
+        if (name == nullptr)
         {
             sizetree++;
-            info = new T(data);
+            name = new T(inpName);
+            value = new T(inpValue);
         }
         else
         {
@@ -85,12 +115,12 @@ public:
                 if (left == nullptr)
                 {
                     sizetree++;
-                    left = new BinaryTree(data);
+                    left = new BinaryTree(inpName, inpValue);
                 }
                 else
                 {
                     sizetree++;
-                    left->addElement(data, false);
+                    left->addElement(inpName, inpValue, false);
                 }
             }
             if (side == true)
@@ -98,7 +128,40 @@ public:
                 if (right == nullptr)
                 {
                     sizetree++;
-                    left->addElement(data, true);
+                    left->addElement(inpName, inpValue, true);
+                }
+            }
+        }
+    }
+
+    void addElementName(T inpName, bool side)
+    {
+        if (name == nullptr)
+        {
+            sizetree++;
+            name = new T(inpName);
+        }
+        else
+        {
+            if (side == false)
+            {
+                if (left == nullptr)
+                {
+                    sizetree++;
+                    left = new BinaryTree(inpName);
+                }
+                else
+                {
+                    sizetree++;
+                    left->addElement(inpName, false);
+                }
+            }
+            if (side == true)
+            {
+                if (right == nullptr)
+                {
+                    sizetree++;
+                    left->addElement(inpName, true);
                 }
             }
         }

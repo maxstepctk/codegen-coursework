@@ -20,10 +20,12 @@ protected:
 		else
 		{
 			s1.push(this);
-			String* tempStr = new String();
+			String* tempStrName = new String();
+			String* tempStrValue = new String();
 			int readedStrSize = readedStr->size();
 			bool isStart = true;
 			bool lastIsClose = false;
+			bool beforeValue = true;
 			for (int i = 0; i < readedStrSize; i++)
 			{
 				SyntaxTree* editingTree = s1.top();
@@ -39,30 +41,46 @@ protected:
 						}
 						else
 						{
-							editingTree->info = new String(tempStr);
-							delete tempStr;
-							tempStr = new String();
+							editingTree->name = new String(tempStrName);
+							editingTree->value = new String(tempStrValue);
+							delete tempStrName;
+							delete tempStrValue;
+							tempStrName = new String();
+							tempStrValue = new String();
 							editingTree->left = new SyntaxTree();
 							s1.push(editingTree->left);
 						}
 					}
 					isStart = false;
 					lastIsClose = false;
+					beforeValue = true;
 				}
 				else if (letter == ')')
 				{
 					if (!lastIsClose)
 					{
-						editingTree->info = new String(tempStr);
-						delete tempStr;
-						tempStr = new String();
+						editingTree->name = new String(tempStrName);
+						editingTree->value = new String(tempStrValue);
+						delete tempStrName;
+						delete tempStrValue;
+						tempStrName = new String();
+						tempStrValue = new String();
+						beforeValue = true;
 					}
 					s1.pop();
 					lastIsClose = true;
 				}
 				else
 				{
-					tempStr->addSym(letter);
+					if ((letter == ':') && beforeValue)
+						beforeValue = false;
+					else
+					{
+						if (beforeValue)
+							tempStrName->addSym(letter);
+						else
+							tempStrValue->addSym(letter);
+					}
 					lastIsClose = false;
 				}
 			}
@@ -70,13 +88,15 @@ protected:
 	}
 
 public:
+
 	SyntaxTree() : BinaryTree<String>() {}
 
 	SyntaxTree(String data) : BinaryTree<String>(data) {};
 
 	SyntaxTree(const char* filename)
 	{
-		info = nullptr;
+		name = nullptr;
+		value = nullptr;
 		sizetree = 0;
 		readFromFile(filename);
 	}
@@ -86,7 +106,13 @@ public:
 	String* printsubtree(const SyntaxTree* tree)
 	{
 		String* str1 = new String();
-		str1->addString(tree->info);
+		str1->addString(tree->name);
+		if (!tree->value->isEmpty())
+		{
+			str1->addSym(':');
+			str1->addString(tree->value);
+		}
+
 		if (tree->left != nullptr)
 		{
 			str1->addSym('(');
