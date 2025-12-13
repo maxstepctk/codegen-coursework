@@ -113,21 +113,52 @@ public:
 			str1->addString(tree->value);
 		}
 
+		str1->addSym('(');
 		if (tree->left != nullptr)
 		{
-			str1->addSym('(');
 			String* fromLeft = printsubtree(tree->left);
 			str1->addString(fromLeft);
 			delete fromLeft;
-			str1->addSym(')');
 		}
+		str1->addSym(')');
+		str1->addSym('(');
 		if (tree->right != nullptr)
 		{
-			str1->addSym('(');
 			String* fromRight = printsubtree(tree->right);
 			str1->addString(fromRight);
 			delete fromRight;
-			str1->addSym(')');
+		}
+		str1->addSym(')');
+		return str1;
+	}
+
+	String* printSubtreeIndent(const SyntaxTree* tree, int level)
+	{
+		String* str1 = new String();
+		str1->addString(tree->name);
+		if (!tree->value->isEmpty())
+		{
+			str1->addSym(':');
+			str1->addString(tree->value);
+		}
+
+		if (tree->left != nullptr)
+		{
+			str1->addSym('\n');
+			for (int i = 0; i < level; i++)
+				str1->addSym('-');
+			String* fromLeft = printSubtreeIndent(tree->left, level + 1);
+			str1->addString(fromLeft);
+			delete fromLeft;
+		}
+		if (tree->right != nullptr)
+		{
+			str1->addSym('\n');
+			for (int i = 0; i < level; i++)
+				str1->addSym('-');
+			String* fromRight = printSubtreeIndent(tree->right, level + 1);
+			str1->addString(fromRight);
+			delete fromRight;
 		}
 		return str1;
 	}
@@ -135,7 +166,7 @@ public:
 
 std::ostream& operator <<(std::ostream& out, SyntaxTree& tree)
 {
-	String* result = tree.printsubtree(&tree);
+	String* result = tree.printSubtreeIndent(&tree, 0);
 	String toOut(result);
 	delete result;
 	out << toOut;
