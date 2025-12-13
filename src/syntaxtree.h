@@ -141,13 +141,14 @@ public:
 			str1->addSym(':');
 			str1->addString(tree->value);
 		}
+		level++;
 
 		if (tree->left != nullptr)
 		{
 			str1->addSym('\n');
 			for (int i = 0; i < level; i++)
 				str1->addSym('-');
-			String* fromLeft = printSubtreeIndent(tree->left, level + 1);
+			String* fromLeft = printSubtreeIndent(tree->left, level);
 			str1->addString(fromLeft);
 			delete fromLeft;
 		}
@@ -156,7 +157,7 @@ public:
 			str1->addSym('\n');
 			for (int i = 0; i < level; i++)
 				str1->addSym('-');
-			String* fromRight = printSubtreeIndent(tree->right, level + 1);
+			String* fromRight = printSubtreeIndent(tree->right, level);
 			str1->addString(fromRight);
 			delete fromRight;
 		}
