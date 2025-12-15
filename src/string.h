@@ -89,6 +89,25 @@ public:
 		return string->size();
 	}
 
+	void addMultiChar(const char* charStr)
+	{
+		for (int i = 0; (i < 4000) && (charStr[i] != '\0'); i++)
+			string->push_back(charStr[i]);
+	}
+
+	bool operator ==(String& str2)
+	{
+		int strsize = this->size();
+		if (strsize != str2.size())
+			return false;
+		for (int i = 0; i < strsize; i++)
+		{
+			if (string[i] != str2[i])
+				return false;
+		}
+		return true;
+	}
+
 	//std::string toString()
 	//{
 	//	std::string str1;

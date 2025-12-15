@@ -38,11 +38,13 @@ protected:
 						{
 							editingTree->right = new SyntaxTree();
 							s1.push(editingTree->right);
+							sizetree++;
 						}
 						else
 						{
 							editingTree->name = new String(tempStrName);
 							editingTree->value = new String(tempStrValue);
+							sizetree++;
 							delete tempStrName;
 							delete tempStrValue;
 							tempStrName = new String();
@@ -51,6 +53,8 @@ protected:
 							s1.push(editingTree->left);
 						}
 					}
+					else
+						sizetree++;
 					isStart = false;
 					lastIsClose = false;
 					beforeValue = true;

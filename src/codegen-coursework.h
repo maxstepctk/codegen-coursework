@@ -6,3 +6,4 @@
 #include "binarytree.h"
 #include "stack.h"
 #include "syntaxtree.h"
+#include "regstate.h"
