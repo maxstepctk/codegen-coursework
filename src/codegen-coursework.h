@@ -7,3 +7,4 @@
 #include "stack.h"
 #include "syntaxtree.h"
 #include "regstate.h"
+#include "varelement.h"

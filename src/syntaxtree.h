@@ -8,9 +8,6 @@
 class SyntaxTree : public BinaryTree<String>
 {
 protected:
-	SyntaxTree* left = nullptr;
-	SyntaxTree* right = nullptr;
-
 	bool readFromFile(const char* filename)
 	{
 		Stack<SyntaxTree*> s1;
@@ -92,6 +89,8 @@ protected:
 	}
 
 public:
+	SyntaxTree* left = nullptr;
+	SyntaxTree* right = nullptr;
 
 	SyntaxTree() : BinaryTree<String>() {}
 

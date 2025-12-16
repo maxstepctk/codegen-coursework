@@ -108,6 +108,24 @@ public:
 		return true;
 	}
 
+	bool operator ==(const char* charStr) // сравнение первых элементов
+	{
+		int i = 0;
+		bool lastIsEnd = false;
+		if (charStr == nullptr)
+			return false;
+		for (i; i < string->size(); i++)
+		{
+			if (lastIsEnd)
+				return false;
+			if (charStr[i] == '\0')
+				lastIsEnd;
+			if ((*string)[i] != charStr[i])
+				return false;
+		}
+		return true;
+	}
+
 	//std::string toString()
 	//{
 	//	std::string str1;
@@ -122,6 +140,5 @@ std::ostream& operator <<(std::ostream& out, String& str)
 	int strsize = str.size();
 	for (int i = 0; i < strsize; i++)
 		out << str[i];
-	out << std::endl;
 	return out;
 }
