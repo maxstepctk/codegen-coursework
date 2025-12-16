@@ -4,7 +4,7 @@
 String progName;
 RegState regs;
 DynArray<VarElement*>* varList = new DynArray<VarElement*>;
-//DynArray constList;
+DynArray <ConstElement*>* constList = new DynArray<ConstElement*>;
 String assemblerProgram;
 
 bool readVars(SyntaxTree* subTree)
@@ -17,7 +17,6 @@ bool readVars(SyntaxTree* subTree)
 		if (treeVar->left != nullptr)
 			if (*(treeVar->left->name) == "IdentifierList")
 			{
-				std::cout << "Прочитал IdentifierList" << std::endl;
 				if (treeVar->left->left != nullptr)
 				{
 					if (*(treeVar->left->left->name) == "Identifier")
@@ -47,13 +46,39 @@ bool readVars(SyntaxTree* subTree)
 	return true;
 }
 
-const char prgrm[7] = { 'p', 'r', 'o', 'g', 'r', 'a', 'm' };
+bool readConsts(SyntaxTree* subTree)
+{
+	SyntaxTree* treeVar = subTree;
+	String* addingConstName = nullptr;
+	String* addingConstType = nullptr;
+	String* addingConstValue = nullptr;
+	do
+	{
+		if (treeVar->left != nullptr)
+			if (*(treeVar->left->name) == "Identifier")
+			{
+				addingConstName = treeVar->left->value;
+				if (treeVar->left->left != nullptr)
+				{
+					addingConstType = treeVar->left->left->name;
+					addingConstValue = treeVar->left->left->value;
+				}
+				else
+					return false;
+			}
+		else
+			return false;
+		constList->push_back(new ConstElement(addingConstName, addingConstType, addingConstValue));
+		treeVar = treeVar->right;
+	} while (treeVar != nullptr);
+	return true;
+}
 
 bool treeToCode(SyntaxTree* treeHead)
 {
 	SyntaxTree* currentNode = treeHead;
 	std::cout << "Начинаю обработку '" << *(currentNode->name) << "'" << std::endl;
-	if (*(currentNode->name) != prgrm)
+	if (*(currentNode->name) != "program")
 		return false;
 	if (currentNode->left == nullptr)
 		return false;
@@ -68,6 +93,9 @@ bool treeToCode(SyntaxTree* treeHead)
 	{
 		if (*(currentNode->name) == "VarDeclaration")
 			if (!readVars(currentNode->left))
+				return false;
+		if (*(currentNode->name) == "ConstDeclaration")
+			if (!readConsts(currentNode->left))
 				return false;
 		currentNode = currentNode->right;
 	}
@@ -87,10 +115,15 @@ int main()
 		if (treeToCode(tree1))
 		{
 			std::cout << "Дерево успешно транслировано" << std::endl;
-			std::cout << "Размер дерева: " << varList->size() << std::endl;
+			std::cout << "Размер массива переменных: " << varList->size() << std::endl;
 			for (int i = 0; i < varList->size(); i++)
 			{
 				std::cout << *(*varList)[i]->name << " " << *(*varList)[i]->type << std::endl;
+			}
+			std::cout << "\nРазмер массива констант: " << constList->size() << std::endl;
+			for (int i = 0; i < constList->size(); i++)
+			{
+				std::cout << *(*constList)[i]->name << " " << *(*constList)[i]->type << " " << *(*constList)[i]->value << std::endl;
 			}
 		}
 		else
