@@ -14,34 +14,39 @@ bool readVars(SyntaxTree* subTree)
 	String* addingVarType = nullptr;
 	do
 	{
-		if (treeVar->left != nullptr)
-			if (*(treeVar->left->name) == "IdentifierList")
-			{
-				if (treeVar->left->left != nullptr)
+		if (*treeVar->name == "Variable")
+		{
+			if (treeVar->left != nullptr)
+				if (*(treeVar->left->name) == "IdentifierList")
 				{
-					if (*(treeVar->left->left->name) == "Identifier")
-						addingVarName = treeVar->left->left->value;
+					if (treeVar->left->left != nullptr)
+					{
+						if (*(treeVar->left->left->name) == "Identifier")
+							addingVarName = treeVar->left->left->value;
+						else
+							return false;
+					}
 					else
 						return false;
+					if (treeVar->left->right != nullptr)
+					{
+						if (*(treeVar->left->right->name) == "Type")
+							addingVarType = treeVar->left->right->value;
+						else
+							return false;
+					}
+					else
+						return false;
+					varList->push_back(new VarElement(addingVarName, addingVarType));
 				}
 				else
 					return false;
-				if (treeVar->left->right != nullptr)
-				{
-					if (*(treeVar->left->right->name) == "Type")
-						addingVarType = treeVar->left->right->value;
-					else
-						return false;
-				}
-				else
-					return false;
-				varList->push_back(new VarElement(addingVarName, addingVarType));
-			}
 			else
 				return false;
+			treeVar = treeVar->right;
+		}
 		else
 			return false;
-		treeVar = treeVar->right;
 	} while (treeVar != nullptr);
 	return true;
 }
@@ -54,18 +59,23 @@ bool readConsts(SyntaxTree* subTree)
 	String* addingConstValue = nullptr;
 	do
 	{
-		if (treeVar->left != nullptr)
-			if (*(treeVar->left->name) == "Identifier")
-			{
-				addingConstName = treeVar->left->value;
-				if (treeVar->left->left != nullptr)
+		if (*treeVar->name == "Constant")
+		{
+			if (treeVar->left != nullptr)
+				if (*(treeVar->left->name) == "Identifier")
 				{
-					addingConstType = treeVar->left->left->name;
-					addingConstValue = treeVar->left->left->value;
+					addingConstName = treeVar->left->value;
+					if (treeVar->left->left != nullptr)
+					{
+						addingConstType = treeVar->left->left->name;
+						addingConstValue = treeVar->left->left->value;
+					}
+					else
+						return false;
 				}
 				else
 					return false;
-			}
+		}
 		else
 			return false;
 		constList->push_back(new ConstElement(addingConstName, addingConstType, addingConstValue));
