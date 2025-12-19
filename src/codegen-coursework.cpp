@@ -84,7 +84,39 @@ bool readConsts(SyntaxTree* subTree)
 	return true;
 }
 
-bool treeToCode(SyntaxTree* treeHead)
+void readRPN(SyntaxTree* subTree, Stack<StatElement*>* storage)
+{
+	//std::cout << "Меня вызвали" << std::endl;
+	if (subTree->left != nullptr)
+	{
+		readRPN(subTree->left, storage);
+	}
+	if (subTree->right != nullptr)
+	{
+		readRPN(subTree->right, storage);
+	}
+	std::cout << "Пишу:" << std::endl;
+	std::cout << *subTree->name << ":" << *subTree->value << std::endl;
+	storage->push(new StatElement(subTree->name, subTree->value));
+}
+
+bool genAssigment(SyntaxTree* assignHead)
+{
+	std::cout << "Опоп, присвоение" << std::endl;
+	Stack<SyntaxTree*>* subTree = new Stack<SyntaxTree*>();
+	subTree->push(assignHead);
+	Stack<StatElement*>* reversePolNot = new Stack<StatElement*>();
+	readRPN(subTree->top()->right->left->left, reversePolNot);
+	std::cout << "Выводим" << std::endl;
+	for (int i = 0; i < reversePolNot->size(); i++)
+	{
+		std::cout << *reversePolNot->top()->type << " " << *reversePolNot->top()->value << std::endl;
+		reversePolNot->pop();
+	}
+	return 1;
+}
+
+bool parseTree(SyntaxTree* treeHead)
 {
 	SyntaxTree* currentNode = treeHead;
 	std::cout << "Начинаю обработку '" << *(currentNode->name) << "'" << std::endl;
@@ -107,6 +139,9 @@ bool treeToCode(SyntaxTree* treeHead)
 		if (*(currentNode->name) == "ConstDeclaration")
 			if (!readConsts(currentNode->left))
 				return false;
+		if (*(currentNode->name) == "CompoundStatement")
+			if (!genAssigment(currentNode->left))
+				return false;
 		currentNode = currentNode->right;
 	}
 	return true;
@@ -122,7 +157,7 @@ int main()
 		std::cout << "Дерево успешно прочитано.\nРазмер дерева: " << tree1->size() << std::endl;
 		std::cout << "Прочитанное дерево:\n" << *tree1 << std::endl;
 		std::cout << "\nЗапуск перевода дерева в код" << std::endl;
-		if (treeToCode(tree1))
+		if (parseTree(tree1))
 		{
 			std::cout << "Дерево успешно транслировано" << std::endl;
 			std::cout << "Размер массива переменных: " << varList->size() << std::endl;
