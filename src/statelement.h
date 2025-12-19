@@ -7,6 +7,8 @@ public:
 	String* type = nullptr;
 	String* value = nullptr;
 
+	StatElement() {}
+
 	StatElement(String* inpType, String* inpValue)
 	{
 		type = new String(inpType);

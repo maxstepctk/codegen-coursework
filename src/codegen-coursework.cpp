@@ -87,6 +87,10 @@ bool readConsts(SyntaxTree* subTree)
 void readRPN(SyntaxTree* subTree, Stack<StatElement*>* storage)
 {
 	//std::cout << "Меня вызвали" << std::endl;
+	StatElement* tempElem = new StatElement(subTree->name, subTree->value);
+	std::cout << "Пишу:" << std::endl;
+	std::cout << *tempElem->type << ":" << *tempElem->value << std::endl;
+	storage->push(tempElem);
 	if (subTree->left != nullptr)
 	{
 		readRPN(subTree->left, storage);
@@ -95,9 +99,6 @@ void readRPN(SyntaxTree* subTree, Stack<StatElement*>* storage)
 	{
 		readRPN(subTree->right, storage);
 	}
-	std::cout << "Пишу:" << std::endl;
-	std::cout << *subTree->name << ":" << *subTree->value << std::endl;
-	storage->push(new StatElement(subTree->name, subTree->value));
 }
 
 bool genAssigment(SyntaxTree* assignHead)

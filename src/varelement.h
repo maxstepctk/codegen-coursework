@@ -7,6 +7,8 @@ public:
 	String* name = nullptr;
 	String* type = nullptr;
 
+	VarElement() {}
+
 	VarElement(String* inpName, String* inpType)
 	{
 		name = new String(inpName);

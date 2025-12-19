@@ -7,6 +7,8 @@ class ConstElement : public VarElement
 public:
 	String* value = nullptr;
 
+	ConstElement() {}
+
 	ConstElement(String* inpName, String* inpType, String* inpValue) : VarElement(inpName, inpType)
 	{
 		value = new String(inpValue);
