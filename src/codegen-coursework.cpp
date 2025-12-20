@@ -154,9 +154,12 @@ bool genAssigment(SyntaxTree* assignHead)
 					}
 					assemblerSequence->addMultiChar("push AX\n");
 				}
-				std::cout << *reversePolNot->top()->type << " " << *reversePolNot->top()->value << std::endl;
+				//std::cout << *reversePolNot->top()->type << " " << *reversePolNot->top()->value << std::endl;
 				reversePolNot->pop();
 			}
+			assemblerSequence->addMultiChar("pop ");
+			assemblerSequence->addString(varName);
+			assemblerSequence->addMultiChar("\n");
 		}
 	}
 	else
