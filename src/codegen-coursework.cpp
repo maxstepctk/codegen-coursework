@@ -5,6 +5,7 @@ String progName;
 RegState regs;
 DynArray<VarElement*>* varList = new DynArray<VarElement*>;
 DynArray <ConstElement*>* constList = new DynArray<ConstElement*>;
+String* assemblerConsts = new String();
 String* assemblerData = new String();
 String* assemblerSequence = new String();
 String* assemblerProgram = new String();
@@ -93,7 +94,6 @@ void readRPN(SyntaxTree* subTree, Stack<StatElement*>* storage)
 bool genAssigment(SyntaxTree* assignHead)
 {
 	std::cout << "Опоп, присвоение" << std::endl;
-	Stack<StatElement*>* reversePolNot = new Stack<StatElement*>();
 	String* varName = nullptr;
 	if (assignHead->left != nullptr)
 		varName = assignHead->left->value;
@@ -103,27 +103,61 @@ bool genAssigment(SyntaxTree* assignHead)
 	{
 		if (*assignHead->right->name == "DECNUM")
 		{
-			assemblerSequence->addMultiChar("mov EAX, ");
+			assemblerSequence->addMultiChar("mov AX, ");
 			assemblerSequence->addString(assignHead->right->value);
 			assemblerSequence->addMultiChar("\nmov ");
 			assemblerSequence->addString(varName);
-			assemblerSequence->addMultiChar(", EAX\n");
+			assemblerSequence->addMultiChar(", AX\n");
 		}
 		if (*assignHead->right->name == "HEXNUM")
 		{
-			assemblerSequence->addMultiChar("mov EAX, 0x");
+			assemblerSequence->addMultiChar("mov AX, 0x");
 			assemblerSequence->addString(assignHead->right->value);
 			assemblerSequence->addMultiChar("\nmov ");
 			assemblerSequence->addString(varName);
-			assemblerSequence->addMultiChar(", EAX\n");
+			assemblerSequence->addMultiChar(", AX\n");
 		}
-		//readRPN(assignHead->left, reversePolNot);
-		//std::cout << "Выводим" << std::endl;
-		//for (int i = 0; i < reversePolNot->size(); i++)
-		//{
-		//	std::cout << *reversePolNot->top()->type << " " << *reversePolNot->top()->value << std::endl;
-		//	reversePolNot->pop();
-		//}
+		if (*assignHead->right->name == "BIN_OP")
+		{
+			Stack<StatElement*>* reversePolNot = new Stack<StatElement*>();
+			readRPN(assignHead->right, reversePolNot);
+			std::cout << "Выводим. Размер стека: " << reversePolNot->size() << std::endl;
+			int stackSize = reversePolNot->size();
+			for (int i = 0; i < stackSize; i++)
+			{
+				if (*reversePolNot->top()->type == "ID")
+				{
+					assemblerSequence->addMultiChar("mov AX, ");
+					assemblerSequence->addString(reversePolNot->top()->value);
+					assemblerSequence->addMultiChar("\npush AX\n");
+				}
+				if ((*reversePolNot->top()->type == "DECNUM") || (*reversePolNot->top()->type == "HEXNUM"))
+				{
+					assemblerSequence->addMultiChar("push ");
+					assemblerSequence->addString(reversePolNot->top()->value);
+					assemblerSequence->addMultiChar("\n");
+				}
+				if (*reversePolNot->top()->type == "BIN_OP")
+				{
+					assemblerSequence->addMultiChar("pop BX\n");
+					assemblerSequence->addMultiChar("pop AX\n");
+					if (*reversePolNot->top()->value == "+")
+						assemblerSequence->addMultiChar("add AX, BX\n");
+					else if (*reversePolNot->top()->value == "-")
+						assemblerSequence->addMultiChar("sub AX, BX\n");
+					else if (*reversePolNot->top()->value == "*")
+						assemblerSequence->addMultiChar("imul AX, BX\n");
+					else if (*reversePolNot->top()->value == "/")
+					{
+						assemblerSequence->addMultiChar("isub AX\n");
+						assemblerSequence->addMultiChar("mov AH, 0\n");
+					}
+					assemblerSequence->addMultiChar("push AX\n");
+				}
+				std::cout << *reversePolNot->top()->type << " " << *reversePolNot->top()->value << std::endl;
+				reversePolNot->pop();
+			}
+		}
 	}
 	else
 		return false;
@@ -152,15 +186,12 @@ bool genConsts()
 {
 	for (int i = 0; i < constList->size(); i++)
 	{
-		assemblerData->addString((*constList)[i]->name);
-		assemblerData->addMultiChar(" sqword ");
-		if (*(*constList)[i]->type == "DECNUM") {}
-		else if (*(*constList)[i]->type == "HEXNUM")
-			assemblerData->addMultiChar("0x");
-		else
+		assemblerConsts->addString((*constList)[i]->name);
+		assemblerConsts->addMultiChar(" equ ");
+		if ((!(*(*constList)[i]->type == "DECNUM")) && (!(*(*constList)[i]->type == "HEXNUM")))
 			return false;
-		assemblerData->addString((*constList)[i]->value);
-		assemblerData->addMultiChar("\n");
+		assemblerConsts->addString((*constList)[i]->value);
+		assemblerConsts->addMultiChar("\n");
 	}
 	return true;
 }
@@ -221,10 +252,11 @@ int main()
 			{
 				std::cout << *(*constList)[i]->name << " " << *(*constList)[i]->type << " " << *(*constList)[i]->value << std::endl;
 			}
-			genVars();
-			assemblerData->addMultiChar("\n");
 			genConsts();
+			assemblerProgram->addString(assemblerConsts);
+			assemblerProgram->addMultiChar("\n");
 			assemblerProgram->addMultiChar(".data\n");
+			genVars();
 			assemblerProgram->addString(assemblerData);
 			assemblerProgram->addMultiChar("\n.code\nmain proc\n");
 			assemblerProgram->addString(assemblerSequence);
