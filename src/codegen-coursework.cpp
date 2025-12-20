@@ -5,7 +5,9 @@ String progName;
 RegState regs;
 DynArray<VarElement*>* varList = new DynArray<VarElement*>;
 DynArray <ConstElement*>* constList = new DynArray<ConstElement*>;
-String assemblerProgram;
+String* assemblerData = new String();
+String* assemblerSequence = new String();
+String* assemblerProgram = new String();
 
 bool readVars(SyntaxTree* subTree)
 {
@@ -78,30 +80,89 @@ void readRPN(SyntaxTree* subTree, Stack<StatElement*>* storage)
 	std::cout << "Пишу:" << std::endl;
 	std::cout << *tempElem->type << ":" << *tempElem->value << std::endl;
 	storage->push(tempElem);
-	if (subTree->left != nullptr)
-	{
-		readRPN(subTree->left, storage);
-	}
 	if (subTree->right != nullptr)
 	{
 		readRPN(subTree->right, storage);
+	}
+	if (subTree->left != nullptr)
+	{
+		readRPN(subTree->left, storage);
 	}
 }
 
 bool genAssigment(SyntaxTree* assignHead)
 {
 	std::cout << "Опоп, присвоение" << std::endl;
-	Stack<SyntaxTree*>* subTree = new Stack<SyntaxTree*>();
-	subTree->push(assignHead);
 	Stack<StatElement*>* reversePolNot = new Stack<StatElement*>();
-	readRPN(subTree->top()->right->left->left, reversePolNot);
-	std::cout << "Выводим" << std::endl;
-	for (int i = 0; i < reversePolNot->size(); i++)
+	String* varName = nullptr;
+	if (assignHead->left != nullptr)
+		varName = assignHead->left->value;
+	else
+		return false;
+	if (assignHead->right != nullptr)
 	{
-		std::cout << *reversePolNot->top()->type << " " << *reversePolNot->top()->value << std::endl;
-		reversePolNot->pop();
+		if (*assignHead->right->name == "DECNUM")
+		{
+			assemblerSequence->addMultiChar("mov EAX, ");
+			assemblerSequence->addString(assignHead->right->value);
+			assemblerSequence->addMultiChar("\nmov ");
+			assemblerSequence->addString(varName);
+			assemblerSequence->addMultiChar(", EAX\n");
+		}
+		if (*assignHead->right->name == "HEXNUM")
+		{
+			assemblerSequence->addMultiChar("mov EAX, 0x");
+			assemblerSequence->addString(assignHead->right->value);
+			assemblerSequence->addMultiChar("\nmov ");
+			assemblerSequence->addString(varName);
+			assemblerSequence->addMultiChar(", EAX\n");
+		}
+		//readRPN(assignHead->left, reversePolNot);
+		//std::cout << "Выводим" << std::endl;
+		//for (int i = 0; i < reversePolNot->size(); i++)
+		//{
+		//	std::cout << *reversePolNot->top()->type << " " << *reversePolNot->top()->value << std::endl;
+		//	reversePolNot->pop();
+		//}
 	}
-	return 1;
+	else
+		return false;
+	return true;
+}
+
+bool genVars()
+{
+	for (int i = 0; i < varList->size(); i++)
+	{
+		String* varType = (*varList)[i]->type;
+		String varSize;
+		if (*varType == "INTEGER")
+			varSize.addMultiChar("sqword");
+		else
+			return false;
+		assemblerData->addString((*varList)[i]->name);
+		assemblerData->addMultiChar(" ");
+		assemblerData->addString(&varSize);
+		assemblerData->addMultiChar(" 0\n");
+	}
+	return true;
+}
+
+bool genConsts()
+{
+	for (int i = 0; i < constList->size(); i++)
+	{
+		assemblerData->addString((*constList)[i]->name);
+		assemblerData->addMultiChar(" sqword ");
+		if (*(*constList)[i]->type == "DECNUM") {}
+		else if (*(*constList)[i]->type == "HEXNUM")
+			assemblerData->addMultiChar("0x");
+		else
+			return false;
+		assemblerData->addString((*constList)[i]->value);
+		assemblerData->addMultiChar("\n");
+	}
+	return true;
 }
 
 bool parseTree(SyntaxTree* treeHead)
@@ -126,9 +187,9 @@ bool parseTree(SyntaxTree* treeHead)
 			if (*(currentNode->left->name) == "CONST_DECL")
 				if (!readConsts(currentNode->left))
 					return false;
-			/*if (*(currentNode->name) == "CompoundStatement")
+			if (*(currentNode->left->name) == "ASSIGN")
 				if (!genAssigment(currentNode->left))
-					return false;*/
+					return false;
 			currentNode = currentNode->right;
 		}
 		else
@@ -160,6 +221,15 @@ int main()
 			{
 				std::cout << *(*constList)[i]->name << " " << *(*constList)[i]->type << " " << *(*constList)[i]->value << std::endl;
 			}
+			genVars();
+			assemblerData->addMultiChar("\n");
+			genConsts();
+			assemblerProgram->addMultiChar(".data\n");
+			assemblerProgram->addString(assemblerData);
+			assemblerProgram->addMultiChar("\n.code\nmain proc\n");
+			assemblerProgram->addString(assemblerSequence);
+			assemblerProgram->addMultiChar("main endp\n");
+			std::cout << "\nРезультирующая программа:\n" << *assemblerProgram << std::endl;
 		}
 		else
 			std::cout << "Ошибка трансляции дерева" << std::endl;
