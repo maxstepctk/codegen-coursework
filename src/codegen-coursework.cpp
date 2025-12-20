@@ -174,7 +174,7 @@ bool genVars()
 		String* varType = (*varList)[i]->type;
 		String varSize;
 		if (*varType == "INTEGER")
-			varSize.addMultiChar("sqword");
+			varSize.addMultiChar("sword");
 		else
 			return false;
 		assemblerData->addString((*varList)[i]->name);
