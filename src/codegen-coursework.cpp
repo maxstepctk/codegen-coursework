@@ -263,7 +263,7 @@ int main()
 			assemblerProgram->addString(assemblerData);
 			assemblerProgram->addMultiChar("\n.code\nmain proc\n");
 			assemblerProgram->addString(assemblerSequence);
-			assemblerProgram->addMultiChar("main endp\nend.\n");
+			assemblerProgram->addMultiChar("main endp\nend\n");
 			std::cout << "\nРезультирующая программа:\n" << *assemblerProgram << std::endl;
 		}
 		else
