@@ -12,42 +12,30 @@ bool readVars(SyntaxTree* subTree)
 	SyntaxTree* treeVar = subTree;
 	String* addingVarName = nullptr;
 	String* addingVarType = nullptr;
-	do
-	{
-		if (*treeVar->name == "Variable")
+		if (*treeVar->name == "VAR_DECL")
 		{
-			if (treeVar->left != nullptr)
-				if (*(treeVar->left->name) == "IdentifierList")
-				{
-					if (treeVar->left->left != nullptr)
+					if (treeVar->left != nullptr)
 					{
-						if (*(treeVar->left->left->name) == "Identifier")
-							addingVarName = treeVar->left->left->value;
+						if (*(treeVar->left->name) == "ID")
+							addingVarName = treeVar->left->value;
 						else
 							return false;
 					}
 					else
 						return false;
-					if (treeVar->left->right != nullptr)
+					if (treeVar->right != nullptr)
 					{
-						if (*(treeVar->left->right->name) == "Type")
-							addingVarType = treeVar->left->right->value;
+						if (*(treeVar->right->name) == "TYPE")
+							addingVarType = treeVar->right->value;
 						else
 							return false;
 					}
 					else
 						return false;
 					varList->push_back(new VarElement(addingVarName, addingVarType));
-				}
-				else
-					return false;
-			else
-				return false;
-			treeVar = treeVar->right;
 		}
 		else
 			return false;
-	} while (treeVar != nullptr);
 	return true;
 }
 
@@ -57,30 +45,29 @@ bool readConsts(SyntaxTree* subTree)
 	String* addingConstName = nullptr;
 	String* addingConstType = nullptr;
 	String* addingConstValue = nullptr;
-	do
-	{
-		if (*treeVar->name == "Constant")
+		if (*treeVar->name == "CONST_DECL")
 		{
 			if (treeVar->left != nullptr)
-				if (*(treeVar->left->name) == "Identifier")
-				{
+			{
+				if (*(treeVar->left->name) == "ID")
 					addingConstName = treeVar->left->value;
-					if (treeVar->left->left != nullptr)
-					{
-						addingConstType = treeVar->left->left->name;
-						addingConstValue = treeVar->left->left->value;
-					}
-					else
-						return false;
-				}
 				else
 					return false;
+			}
+			else
+				return false;
+			if (treeVar->right != nullptr)
+			{
+				addingConstType = treeVar->right->name;
+				addingConstValue = treeVar->right->value;
+
+			}
+			else
+				return false;
+			constList->push_back(new ConstElement(addingConstName, addingConstType, addingConstValue));
 		}
 		else
 			return false;
-		constList->push_back(new ConstElement(addingConstName, addingConstType, addingConstValue));
-		treeVar = treeVar->right;
-	} while (treeVar != nullptr);
 	return true;
 }
 
@@ -121,29 +108,31 @@ bool parseTree(SyntaxTree* treeHead)
 {
 	SyntaxTree* currentNode = treeHead;
 	std::cout << "Начинаю обработку '" << *(currentNode->name) << "'" << std::endl;
-	if (*(currentNode->name) != "program")
+	if (*(currentNode->name) != "PROGRAM")
 		return false;
 	if (currentNode->left == nullptr)
 		return false;
-	currentNode = currentNode->left;
-	if (*(currentNode->name) != "Identifier")
+	if (*(currentNode->left->name) != "ID")
 		return false;
 	progName = *(currentNode->value);
-	if (currentNode->left == nullptr)
-		return false;
-	currentNode = currentNode->left;
+	currentNode = currentNode->right;
 	while (currentNode != nullptr)
 	{
-		if (*(currentNode->name) == "VarDeclaration")
-			if (!readVars(currentNode->left))
-				return false;
-		if (*(currentNode->name) == "ConstDeclaration")
-			if (!readConsts(currentNode->left))
-				return false;
-		if (*(currentNode->name) == "CompoundStatement")
-			if (!genAssigment(currentNode->left))
-				return false;
-		currentNode = currentNode->right;
+		if (currentNode->left != nullptr)
+		{
+			if (*(currentNode->left->name) == "VAR_DECL")
+				if (!readVars(currentNode->left))
+					return false;
+			if (*(currentNode->left->name) == "CONST_DECL")
+				if (!readConsts(currentNode->left))
+					return false;
+			/*if (*(currentNode->name) == "CompoundStatement")
+				if (!genAssigment(currentNode->left))
+					return false;*/
+			currentNode = currentNode->right;
+		}
+		else
+			return false;
 	}
 	return true;
 }
@@ -151,7 +140,7 @@ bool parseTree(SyntaxTree* treeHead)
 int main()
 {
 	setlocale(LC_ALL, "Rus");
-	const char* filename = "D:\\syntaxis\\syntax\\syntax_tree.txt";
+	const char* filename = "D:\\naturaltree.txt";
 	SyntaxTree* tree1 = new SyntaxTree(filename);
 	if (tree1->size() != 0)
 	{
