@@ -1,7 +1,7 @@
 ﻿#include "codegen-coursework.h"
 #include <locale>
 
-String progName;
+String* progName = nullptr;
 RegState regs;
 DynArray<VarElement*>* varList = new DynArray<VarElement*>;
 DynArray <ConstElement*>* constList = new DynArray<ConstElement*>;
@@ -235,7 +235,7 @@ bool parseTree(SyntaxTree* treeHead)
 		return false;
 	if (*(currentNode->left->name) != "ID")
 		return false;
-	progName = *(currentNode->value);
+	progName = currentNode->left->value;
 	currentNode = currentNode->right;
 	while (currentNode != nullptr)
 	{
@@ -302,9 +302,11 @@ int main()
 			assemblerProgram->addString(assemblerSequence);
 			assemblerProgram->addMultiChar("main endp\nend\n");
 			std::cout << "\nРезультирующая программа:\n" << *assemblerProgram << std::endl;
-			//String* fileName = new String(progName);
-			//fileName->addMultiChar(".asm");
-			assemblerProgram->writeToFile("result.asm");
+			String* fileName = new String();
+			std::cout << *progName << std::endl;
+			fileName->addString(progName);
+			fileName->addMultiChar(".asm");
+			assemblerProgram->writeToFile(fileName->toChar());
 		}
 		else
 			std::cout << "Ошибка трансляции дерева" << std::endl;

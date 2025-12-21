@@ -126,6 +126,7 @@ public:
         T* outArray = new T[sizearr];
         for (int i = 0; i < sizearr; i++)
             outArray[i] = array[i];
+        outArray[sizearr] = '\0';
         return outArray;
     }
 
