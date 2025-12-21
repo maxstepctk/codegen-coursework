@@ -9,6 +9,7 @@ String* assemblerConsts = new String();
 String* assemblerData = new String();
 String* assemblerSequence = new String();
 String* assemblerProgram = new String();
+bool useWriteln = false;
 
 bool readVars(SyntaxTree* subTree)
 {
@@ -167,6 +168,32 @@ bool genAssigment(SyntaxTree* assignHead)
 	return true;
 }
 
+bool genFuncCall(SyntaxTree* funcHead)
+{
+	String* funcName = nullptr;
+	if (funcHead->left != nullptr)
+	{
+		funcName = funcHead->left->value;
+		if (*funcName == "writeln")
+		{
+			useWriteln = true;
+			std::cout << "writeln" << std::endl;
+			assemblerSequence->addMultiChar("xor RDX, RDX\nmov DX, ");
+			if (funcHead->right != nullptr)
+			{
+				std::cout << "переменная" << std::endl;
+				assemblerSequence->addString(funcHead->right->value);
+			}
+			else
+				return false;
+			assemblerSequence->addMultiChar("\ncall writeln\n");
+		}
+	}
+	else
+		return false;
+	return true;
+}
+
 bool genVars()
 {
 	for (int i = 0; i < varList->size(); i++)
@@ -224,6 +251,9 @@ bool parseTree(SyntaxTree* treeHead)
 			if (*(currentNode->left->name) == "ASSIGN")
 				if (!genAssigment(currentNode->left))
 					return false;
+			if (*(currentNode->left->name) == "FUNC_CALL")
+				if (!genFuncCall(currentNode->left))
+					return false;
 			currentNode = currentNode->right;
 		}
 		else
@@ -256,12 +286,20 @@ int main()
 				std::cout << *(*constList)[i]->name << " " << *(*constList)[i]->type << " " << *(*constList)[i]->value << std::endl;
 			}
 			genConsts();
+			if (useWriteln)
+				assemblerProgram->addMultiChar("includelib ucrt.lib\nincludelib legacy_stdio_definitions.lib\n\n");
 			assemblerProgram->addString(assemblerConsts);
 			assemblerProgram->addMultiChar("\n");
 			assemblerProgram->addMultiChar(".data\n");
 			genVars();
 			assemblerProgram->addString(assemblerData);
-			assemblerProgram->addMultiChar("\n.code\nmain proc\n");
+			if (useWriteln)
+			{
+				assemblerProgram->addMultiChar("\nformat byte '%d', 10, 0\n");
+				assemblerProgram->addMultiChar("\n.code\nexterndef printf: PROC\nwriteln proc\nlea RCX, format\nxor RAX, RAX\ncall printf\nret\nwriteln endp\n\nmain proc\n");
+			}
+			else
+				assemblerProgram->addMultiChar("\n.code\nmain proc\n");
 			assemblerProgram->addString(assemblerSequence);
 			assemblerProgram->addMultiChar("main endp\nend\n");
 			std::cout << "\nРезультирующая программа:\n" << *assemblerProgram << std::endl;
