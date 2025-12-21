@@ -16,30 +16,30 @@ bool readVars(SyntaxTree* subTree)
 	SyntaxTree* treeVar = subTree;
 	String* addingVarName = nullptr;
 	String* addingVarType = nullptr;
-		if (*treeVar->name == "VAR_DECL")
+	if (*treeVar->name == "VAR_DECL")
+	{
+		if (treeVar->left != nullptr)
 		{
-					if (treeVar->left != nullptr)
-					{
-						if (*(treeVar->left->name) == "ID")
-							addingVarName = treeVar->left->value;
-						else
-							return false;
-					}
-					else
-						return false;
-					if (treeVar->right != nullptr)
-					{
-						if (*(treeVar->right->name) == "TYPE")
-							addingVarType = treeVar->right->value;
-						else
-							return false;
-					}
-					else
-						return false;
-					varList->push_back(new VarElement(addingVarName, addingVarType));
+			if (*(treeVar->left->name) == "ID")
+				addingVarName = treeVar->left->value;
+			else
+				return false;
 		}
 		else
 			return false;
+		if (treeVar->right != nullptr)
+		{
+			if (*(treeVar->right->name) == "TYPE")
+				addingVarType = treeVar->right->value;
+			else
+				return false;
+		}
+		else
+			return false;
+		varList->push_back(new VarElement(addingVarName, addingVarType));
+	}
+	else
+		return false;
 	return true;
 }
 
@@ -49,38 +49,35 @@ bool readConsts(SyntaxTree* subTree)
 	String* addingConstName = nullptr;
 	String* addingConstType = nullptr;
 	String* addingConstValue = nullptr;
-		if (*treeVar->name == "CONST_DECL")
+	if (*treeVar->name == "CONST_DECL")
+	{
+		if (treeVar->left != nullptr)
 		{
-			if (treeVar->left != nullptr)
-			{
-				if (*(treeVar->left->name) == "ID")
-					addingConstName = treeVar->left->value;
-				else
-					return false;
-			}
+			if (*(treeVar->left->name) == "ID")
+				addingConstName = treeVar->left->value;
 			else
 				return false;
-			if (treeVar->right != nullptr)
-			{
-				addingConstType = treeVar->right->name;
-				addingConstValue = treeVar->right->value;
-
-			}
-			else
-				return false;
-			constList->push_back(new ConstElement(addingConstName, addingConstType, addingConstValue));
 		}
 		else
 			return false;
+		if (treeVar->right != nullptr)
+		{
+			addingConstType = treeVar->right->name;
+			addingConstValue = treeVar->right->value;
+
+		}
+		else
+			return false;
+		constList->push_back(new ConstElement(addingConstName, addingConstType, addingConstValue));
+	}
+	else
+		return false;
 	return true;
 }
 
 void readRPN(SyntaxTree* subTree, Stack<StatElement*>* storage)
 {
-	//std::cout << "Меня вызвали" << std::endl;
 	StatElement* tempElem = new StatElement(subTree->name, subTree->value);
-	std::cout << "Пишу:" << std::endl;
-	std::cout << *tempElem->type << ":" << *tempElem->value << std::endl;
 	storage->push(tempElem);
 	if (subTree->right != nullptr)
 	{
@@ -94,7 +91,6 @@ void readRPN(SyntaxTree* subTree, Stack<StatElement*>* storage)
 
 bool genAssigment(SyntaxTree* assignHead)
 {
-	std::cout << "Опоп, присвоение" << std::endl;
 	String* varName = nullptr;
 	if (assignHead->left != nullptr)
 		varName = assignHead->left->value;
@@ -122,7 +118,6 @@ bool genAssigment(SyntaxTree* assignHead)
 		{
 			Stack<StatElement*>* reversePolNot = new Stack<StatElement*>();
 			readRPN(assignHead->right, reversePolNot);
-			std::cout << "Выводим. Размер стека: " << reversePolNot->size() << std::endl;
 			int stackSize = reversePolNot->size();
 			for (int i = 0; i < stackSize; i++)
 			{
@@ -155,7 +150,6 @@ bool genAssigment(SyntaxTree* assignHead)
 					}
 					assemblerSequence->addMultiChar("push AX\n");
 				}
-				//std::cout << *reversePolNot->top()->type << " " << *reversePolNot->top()->value << std::endl;
 				reversePolNot->pop();
 			}
 			assemblerSequence->addMultiChar("pop ");
@@ -174,14 +168,12 @@ bool genFuncCall(SyntaxTree* funcHead)
 	if (funcHead->left != nullptr)
 	{
 		funcName = funcHead->left->value;
-		if (*funcName == "writeln")
+		if (*funcName == "WRITELN")
 		{
 			useWriteln = true;
-			std::cout << "writeln" << std::endl;
 			assemblerSequence->addMultiChar("movsx RDX, ");
 			if (funcHead->right != nullptr)
 			{
-				std::cout << "переменная" << std::endl;
 				assemblerSequence->addString(funcHead->right->value);
 			}
 			else
@@ -191,6 +183,20 @@ bool genFuncCall(SyntaxTree* funcHead)
 	}
 	else
 		return false;
+	return true;
+}
+
+bool genWritelnCall(SyntaxTree* funcHead)
+{
+	useWriteln = true;
+	assemblerSequence->addMultiChar("movsx RDX, ");
+	if (funcHead->left != nullptr)
+	{
+		assemblerSequence->addString(funcHead->left->value);
+	}
+	else
+		return false;
+	assemblerSequence->addMultiChar("\ncall writeln\n");
 	return true;
 }
 
@@ -226,6 +232,31 @@ bool genConsts()
 	return true;
 }
 
+bool processDecls(SyntaxTree* currentNode)
+{
+	if (*(currentNode->name) == "VAR_DECL")
+		if (!readVars(currentNode))
+			return false;
+	if (*(currentNode->name) == "CONST_DECL")
+		if (!readConsts(currentNode))
+			return false;
+	return true;
+}
+
+bool processUsing(SyntaxTree* currentNode)
+{
+	if (*(currentNode->name) == "ASSIGN")
+		if (!genAssigment(currentNode))
+			return false;
+	//if (*(currentNode->name) == "FUNC_CALL")
+	//	if (!genFuncCall(currentNode))
+	//		return false;
+	if (*(currentNode->name) == "WRITELN")
+		if (!genWritelnCall(currentNode))
+			return false;
+	return true;
+}
+
 bool parseTree(SyntaxTree* treeHead)
 {
 	SyntaxTree* currentNode = treeHead;
@@ -237,26 +268,44 @@ bool parseTree(SyntaxTree* treeHead)
 		return false;
 	progName = currentNode->left->value;
 	currentNode = currentNode->right;
+	SyntaxTree* splitPlace = currentNode;
+	currentNode = currentNode->left;
 	while (currentNode != nullptr)
 	{
-		if (currentNode->left != nullptr)
+		if (*currentNode->name == "SEQ")
 		{
-			if (*(currentNode->left->name) == "VAR_DECL")
-				if (!readVars(currentNode->left))
+			if (currentNode->left != nullptr)
+			{
+				if (!processDecls(currentNode->left))
 					return false;
-			if (*(currentNode->left->name) == "CONST_DECL")
-				if (!readConsts(currentNode->left))
-					return false;
-			if (*(currentNode->left->name) == "ASSIGN")
-				if (!genAssigment(currentNode->left))
-					return false;
-			if (*(currentNode->left->name) == "FUNC_CALL")
-				if (!genFuncCall(currentNode->left))
-					return false;
-			currentNode = currentNode->right;
+
+			}
+			else
+				return false;
 		}
 		else
-			return false;
+			if (!processDecls(currentNode))
+				return false;
+		currentNode = currentNode->right;
+	}
+	currentNode = splitPlace->right;
+	while (currentNode != nullptr)
+	{
+		if (*currentNode->name == "SEQ")
+		{
+			if (currentNode->left != nullptr)
+			{
+				if (!processUsing(currentNode->left))
+					return false;
+
+			}
+			else
+				return false;
+		}
+		else
+			if (!processUsing(currentNode))
+				return false;
+		currentNode = currentNode->right;
 	}
 	return true;
 }
@@ -264,7 +313,7 @@ bool parseTree(SyntaxTree* treeHead)
 int main()
 {
 	setlocale(LC_ALL, "Rus");
-	const char* filename = "D:\\naturaltree.txt";
+	const char* filename = "C:\\Users\\MaxStep\\source\\repos\\syntax3\\syntax\\syntax_tree.txt";
 	SyntaxTree* tree1 = new SyntaxTree(filename);
 	if (tree1->size() != 0)
 	{
@@ -274,6 +323,7 @@ int main()
 		if (parseTree(tree1))
 		{
 			std::cout << "Дерево успешно транслировано" << std::endl;
+			std::cout << "Имя программы: " << *progName << std::endl;
 			std::cout << "Размер массива переменных: " << varList->size() << std::endl;
 			for (int i = 0; i < varList->size(); i++)
 			{
@@ -303,7 +353,6 @@ int main()
 			assemblerProgram->addMultiChar("main endp\nend\n");
 			std::cout << "\nРезультирующая программа:\n" << *assemblerProgram << std::endl;
 			String fileName;
-			std::cout << *progName << std::endl;
 			fileName.addString(progName);
 			fileName.addMultiChar(".asm");
 			assemblerProgram->writeToFile(fileName.toChar());
