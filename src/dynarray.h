@@ -121,5 +121,12 @@ public:
         }
         return minelem;
     }
+    T* toMas()
+    {
+        T* outArray = new T[sizearr];
+        for (int i = 0; i < sizearr; i++)
+            outArray[i] = array[i];
+        return outArray;
+    }
 
 };

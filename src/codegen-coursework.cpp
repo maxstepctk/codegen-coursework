@@ -229,7 +229,6 @@ bool genConsts()
 bool parseTree(SyntaxTree* treeHead)
 {
 	SyntaxTree* currentNode = treeHead;
-	std::cout << "Начинаю обработку '" << *(currentNode->name) << "'" << std::endl;
 	if (*(currentNode->name) != "PROGRAM")
 		return false;
 	if (currentNode->left == nullptr)
@@ -303,6 +302,9 @@ int main()
 			assemblerProgram->addString(assemblerSequence);
 			assemblerProgram->addMultiChar("main endp\nend\n");
 			std::cout << "\nРезультирующая программа:\n" << *assemblerProgram << std::endl;
+			//String* fileName = new String(progName);
+			//fileName->addMultiChar(".asm");
+			assemblerProgram->writeToFile("result.asm");
 		}
 		else
 			std::cout << "Ошибка трансляции дерева" << std::endl;

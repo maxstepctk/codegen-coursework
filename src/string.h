@@ -21,6 +21,7 @@ private:
 				for (int i = 0; i < 256; i++)
 					buffer[i] = NULL;
 			}
+			fclose;
 			return tempstr;
 		}
 		else
@@ -108,6 +109,11 @@ public:
 		return true;
 	}
 
+	char* toChar()
+	{
+		return string->toMas();
+	}
+
 	bool operator ==(const char* charStr) // сравнение первых элементов
 	{
 		int i = 0;
@@ -126,6 +132,24 @@ public:
 		return true;
 	}
 
+	bool writeToFile(const char* filename)
+	{
+		FILE* fp = fopen(filename, "w");
+		if (fp)
+		{
+			int strLen = string->size();
+			char* outCharList = string->toMas();
+			for (int i = 0; i < strLen; i++)
+				fputc(outCharList[i], fp);
+			fclose;
+			return true;
+		}
+		else
+		{
+			std::cerr << "Ошибка записи в файл";
+			return false;
+		}
+	}
 	//std::string toString()
 	//{
 	//	std::string str1;
