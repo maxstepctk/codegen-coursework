@@ -178,7 +178,7 @@ bool genFuncCall(SyntaxTree* funcHead)
 		{
 			useWriteln = true;
 			std::cout << "writeln" << std::endl;
-			assemblerSequence->addMultiChar("xor RDX, RDX\nmov DX, ");
+			assemblerSequence->addMultiChar("movsx RDX, ");
 			if (funcHead->right != nullptr)
 			{
 				std::cout << "переменная" << std::endl;
