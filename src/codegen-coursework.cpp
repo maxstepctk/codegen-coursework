@@ -302,11 +302,11 @@ int main()
 			assemblerProgram->addString(assemblerSequence);
 			assemblerProgram->addMultiChar("main endp\nend\n");
 			std::cout << "\nРезультирующая программа:\n" << *assemblerProgram << std::endl;
-			String* fileName = new String();
+			String fileName;
 			std::cout << *progName << std::endl;
-			fileName->addString(progName);
-			fileName->addMultiChar(".asm");
-			assemblerProgram->writeToFile(fileName->toChar());
+			fileName.addString(progName);
+			fileName.addMultiChar(".asm");
+			assemblerProgram->writeToFile(fileName.toChar());
 		}
 		else
 			std::cout << "Ошибка трансляции дерева" << std::endl;
