@@ -8,6 +8,7 @@ DynArray <ConstElement*>* constList = new DynArray<ConstElement*>;
 String* assemblerConsts = new String();
 String* assemblerData = new String();
 String* assemblerSequence = new String();
+String* assemblerFunctions = new String();
 String* assemblerProgram = new String();
 bool useWriteln = false;
 
@@ -162,24 +163,86 @@ bool genAssigment(SyntaxTree* assignHead)
 	return true;
 }
 
-bool genFuncCall(SyntaxTree* funcHead)
+bool readFuncParams(SyntaxTree* paramHead, DynArray<ParamElement*>* paramList)
+{
+	int elemType = 0;
+	String* paramName = nullptr;
+	String* paramType = nullptr;
+	if (*paramHead->name == "PARAM_VAL")
+		elemType = 1;
+	else if (*paramHead->name == "PARAM_VAR")
+		elemType = 2;
+	else if (*paramHead->name == "PARAM_CONST")
+		elemType = 3;
+	else
+		return false;
+	if (paramHead->left != nullptr)
+		if (*(paramHead->left)->name == "ID")
+			paramName = paramHead->left->value;
+		else
+			return false;
+	else
+		return false;
+	if (paramHead->right != nullptr)
+		if (*(paramHead->right)->name == "TYPE")
+			paramType = paramHead->right->value;
+		else
+			return false;
+	else
+		return false;
+	std::cout << "Хочу создать элемент параметров" << std::endl;
+	ParamElement* paramToWrite = new ParamElement(paramName, paramType, elemType);
+	paramList->push_back(paramToWrite);
+	return true;
+}
+
+bool genFuncDecl(SyntaxTree* funcHead)
 {
 	String* funcName = nullptr;
+	DynArray<ParamElement*>* paramList = new DynArray<ParamElement*>();
 	if (funcHead->left != nullptr)
 	{
 		funcName = funcHead->left->value;
-		if (*funcName == "WRITELN")
+	}
+	else
+		return false;
+	if (funcHead->right != nullptr)
+	{
+		SyntaxTree* splitPlace = funcHead->right;
+		SyntaxTree* currentNode = splitPlace->left;
+		std::cout << "Начинаю обход параметров" << std::endl;
+		if (currentNode != nullptr)
 		{
-			useWriteln = true;
-			assemblerSequence->addMultiChar("movsx RDX, ");
-			if (funcHead->right != nullptr)
+			while (currentNode != nullptr)
 			{
-				assemblerSequence->addString(funcHead->right->value);
+				if (*currentNode->name == "SEQ")
+				{
+					if (currentNode->left != nullptr)
+					{
+						std::cout << "Читаю параметры начала и середины" << std::endl;
+						if (!readFuncParams(currentNode->left, paramList))
+							return false;
+					}
+					else
+						return false;
+				}
+				else
+				{
+					std::cout << "Читаю конечный параметр" << std::endl;
+					if (!readFuncParams(currentNode, paramList))
+						return false;
+				}
+				currentNode = currentNode->right;
 			}
-			else
-				return false;
-			assemblerSequence->addMultiChar("\ncall writeln\n");
+
+			int size = paramList->size();
+			for (int i = 0; i < size; i++)
+			{
+				std::cout << *(*paramList)[i]->name << *(*paramList)[i]->dataType << *(*paramList)[i]->elemType << std::endl;
+			}
 		}
+		else
+			return false;
 	}
 	else
 		return false;
@@ -239,6 +302,9 @@ bool processDecls(SyntaxTree* currentNode)
 			return false;
 	if (*(currentNode->name) == "CONST_DECL")
 		if (!readConsts(currentNode))
+			return false;
+	if (*(currentNode->name) == "FUNCTION")
+		if (!genFuncDecl(currentNode))
 			return false;
 	return true;
 }
