@@ -4,13 +4,15 @@
 String* progName = nullptr;
 RegState regs;
 DynArray<VarElement*>* varList = new DynArray<VarElement*>;
-DynArray <ConstElement*>* constList = new DynArray<ConstElement*>;
+DynArray<ConstElement*>* constList = new DynArray<ConstElement*>;
+DynArray<Function*>* functionList = new DynArray<Function*>;
 String* assemblerConsts = new String();
 String* assemblerData = new String();
 String* assemblerSequence = new String();
 String* assemblerFunctions = new String();
 String* assemblerProgram = new String();
 bool useWriteln = false;
+int intSize = 2;
 
 bool readVars(SyntaxTree* subTree)
 {
@@ -163,7 +165,7 @@ bool genAssigment(SyntaxTree* assignHead, DynArray<ParamElement*>* funcParamLisr
 	return true;
 }
 
-bool readFuncParams(SyntaxTree* paramHead, DynArray<ParamElement*>* paramList)
+bool readFuncParams(SyntaxTree* paramHead, Function* funcToAdd)
 {
 	int elemType = 0;
 	String* paramName = nullptr;
@@ -192,20 +194,22 @@ bool readFuncParams(SyntaxTree* paramHead, DynArray<ParamElement*>* paramList)
 		return false;
 	std::cout << "Хочу создать элемент параметров" << std::endl;
 	ParamElement* paramToWrite = new ParamElement(paramName, paramType, elemType);
-	paramList->push_back(paramToWrite);
+	funcToAdd->addParameter(paramToWrite);
 	return true;
 }
 
 bool genFuncDecl(SyntaxTree* funcHead)
 {
 	String* funcName = nullptr;
-	DynArray<ParamElement*>* paramList = new DynArray<ParamElement*>();
 	if (funcHead->left != nullptr)
 	{
 		funcName = funcHead->left->value;
 	}
 	else
 		return false;
+
+	Function* newFunction = new Function(funcName);
+
 	if (funcHead->right != nullptr)
 	{
 		SyntaxTree* splitPlace = funcHead->right;
@@ -221,7 +225,7 @@ bool genFuncDecl(SyntaxTree* funcHead)
 					if (currentNode->left != nullptr)
 					{
 						std::cout << "Читаю параметры начала и середины" << std::endl;
-						if (!readFuncParams(currentNode->left, paramList))
+						if (!readFuncParams(currentNode->left, newFunction))
 							return false;
 					}
 					else
@@ -231,7 +235,7 @@ bool genFuncDecl(SyntaxTree* funcHead)
 				{
 					std::cout << "Читаю конечный параметр. " << std::endl; //*currentNode->left->name << std::endl;
 					notEnd = false;
-					if (!readFuncParams(currentNode, paramList))
+					if (!readFuncParams(currentNode, newFunction))
 					{
 						return false;
 					}
@@ -239,40 +243,36 @@ bool genFuncDecl(SyntaxTree* funcHead)
 				currentNode = currentNode->right;
 			}
 
-			int size = paramList->size();
-			for (int i = 0; i < size; i++)
-			{
-				std::cout << *(*paramList)[i]->name << " " << *(*paramList)[i]->dataType << " " << *(*paramList)[i]->elemType << std::endl;
-			}
+			newFunction->printParams();
 
 			currentNode = splitPlace->right;
-			if (currentNode != nullptr)
-			{
-				while (currentNode != nullptr && notEnd)
-				{
-					if (*currentNode->name == "SEQ")
-					{
-						if (currentNode->left != nullptr)
-						{
-							std::cout << "Читаю использование начала и середины" << std::endl;
-							if (!readFuncParams(currentNode->left, paramList))
-								return false;
-						}
-						else
-							return false;
-					}
-					else
-					{
-						std::cout << "Читаю конечное использование. " << std::endl; //*currentNode->left->name << std::endl;
-						notEnd = false;
-						if (!readFuncParams(currentNode, paramList))
-						{
-							return false;
-						}
-					}
-					currentNode = currentNode->right;
-				}
-			}
+			//if (currentNode != nullptr)
+			//{
+			//	while (currentNode != nullptr && notEnd)
+			//	{
+			//		if (*currentNode->name == "SEQ")
+			//		{
+			//			if (currentNode->left != nullptr)
+			//			{
+			//				std::cout << "Читаю использование начала и середины" << std::endl;
+			//				if (!readFuncParams(currentNode->left, paramList))
+			//					return false;
+			//			}
+			//			else
+			//				return false;
+			//		}
+			//		else
+			//		{
+			//			std::cout << "Читаю конечное использование. " << std::endl; //*currentNode->left->name << std::endl;
+			//			notEnd = false;
+			//			if (!readFuncParams(currentNode, paramList))
+			//			{
+			//				return false;
+			//			}
+			//		}
+			//		currentNode = currentNode->right;
+			//	}
+			//}
 		}
 		else
 			return false;

@@ -23,7 +23,7 @@ public:
         array = new T[neededCapacity];
     }
 
-    DynArray(const DynArray<T>& arr2)
+    DynArray(DynArray<T>& arr2)
     {
         int size2 = arr2.size();
         sizearr = size2;
