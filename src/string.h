@@ -10,25 +10,25 @@ private:
 	DynArray<char>* readFromFile(const char* filename)
 	{
 		DynArray<char>* tempstr = new DynArray<char>();
-		char buffer[256];
+		char buffer[4];
 		FILE* fp = fopen(filename, "r");
 		if (fp)
 		{
-			while ((fgets(buffer, 256, fp)) != NULL)
+			while ((fgets(buffer, 4, fp)) != NULL)
 			{
-				for (int i = 0; (i < 256) && (buffer[i] != NULL); i++)
+				for (int i = 0; (i < 4) && (buffer[i] != NULL); i++)
 					tempstr->push_back(buffer[i]);
-				for (int i = 0; i < 256; i++)
+				for (int i = 0; i < 4; i++)
 					buffer[i] = NULL;
 			}
 			fclose;
-			return tempstr;
 		}
 		else
 		{
 			delete tempstr;
 			std::cerr << "Ошибка чтения файла";
 		}
+		return tempstr;
 	}
 
 public:

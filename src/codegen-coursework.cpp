@@ -90,7 +90,7 @@ void readRPN(SyntaxTree* subTree, Stack<StatElement*>* storage)
 	}
 }
 
-bool genAssigment(SyntaxTree* assignHead)
+bool genAssigment(SyntaxTree* assignHead, DynArray<ParamElement*>* funcParamLisr)
 {
 	String* varName = nullptr;
 	if (assignHead->left != nullptr)
@@ -146,7 +146,7 @@ bool genAssigment(SyntaxTree* assignHead)
 						assemblerSequence->addMultiChar("imul AX, BX\n");
 					else if (*reversePolNot->top()->value == "/")
 					{
-						assemblerSequence->addMultiChar("isub AX\n");
+						assemblerSequence->addMultiChar("idiv BL\n");
 						assemblerSequence->addMultiChar("mov AH, 0\n");
 					}
 					assemblerSequence->addMultiChar("push AX\n");
@@ -210,10 +210,11 @@ bool genFuncDecl(SyntaxTree* funcHead)
 	{
 		SyntaxTree* splitPlace = funcHead->right;
 		SyntaxTree* currentNode = splitPlace->left;
+		bool notEnd = true;
 		std::cout << "Начинаю обход параметров" << std::endl;
 		if (currentNode != nullptr)
 		{
-			while (currentNode != nullptr)
+			while (currentNode != nullptr && notEnd)
 			{
 				if (*currentNode->name == "SEQ")
 				{
@@ -228,9 +229,12 @@ bool genFuncDecl(SyntaxTree* funcHead)
 				}
 				else
 				{
-					std::cout << "Читаю конечный параметр" << std::endl;
+					std::cout << "Читаю конечный параметр. " << std::endl; //*currentNode->left->name << std::endl;
+					notEnd = false;
 					if (!readFuncParams(currentNode, paramList))
+					{
 						return false;
+					}
 				}
 				currentNode = currentNode->right;
 			}
@@ -238,7 +242,36 @@ bool genFuncDecl(SyntaxTree* funcHead)
 			int size = paramList->size();
 			for (int i = 0; i < size; i++)
 			{
-				std::cout << *(*paramList)[i]->name << *(*paramList)[i]->dataType << *(*paramList)[i]->elemType << std::endl;
+				std::cout << *(*paramList)[i]->name << " " << *(*paramList)[i]->dataType << " " << *(*paramList)[i]->elemType << std::endl;
+			}
+
+			currentNode = splitPlace->right;
+			if (currentNode != nullptr)
+			{
+				while (currentNode != nullptr && notEnd)
+				{
+					if (*currentNode->name == "SEQ")
+					{
+						if (currentNode->left != nullptr)
+						{
+							std::cout << "Читаю использование начала и середины" << std::endl;
+							if (!readFuncParams(currentNode->left, paramList))
+								return false;
+						}
+						else
+							return false;
+					}
+					else
+					{
+						std::cout << "Читаю конечное использование. " << std::endl; //*currentNode->left->name << std::endl;
+						notEnd = false;
+						if (!readFuncParams(currentNode, paramList))
+						{
+							return false;
+						}
+					}
+					currentNode = currentNode->right;
+				}
 			}
 		}
 		else
@@ -252,7 +285,7 @@ bool genFuncDecl(SyntaxTree* funcHead)
 bool genWritelnCall(SyntaxTree* funcHead)
 {
 	useWriteln = true;
-	assemblerSequence->addMultiChar("movsx RDX, ");
+	assemblerSequence->addMultiChar("push ");
 	if (funcHead->left != nullptr)
 	{
 		assemblerSequence->addString(funcHead->left->value);
@@ -309,10 +342,10 @@ bool processDecls(SyntaxTree* currentNode)
 	return true;
 }
 
-bool processUsing(SyntaxTree* currentNode)
+bool processUsing(SyntaxTree* currentNode, DynArray<ParamElement*>* funcParamList)
 {
 	if (*(currentNode->name) == "ASSIGN")
-		if (!genAssigment(currentNode))
+		if (!genAssigment(currentNode, funcParamList))
 			return false;
 	//if (*(currentNode->name) == "FUNC_CALL")
 	//	if (!genFuncCall(currentNode))
@@ -329,49 +362,57 @@ bool parseTree(SyntaxTree* treeHead)
 	if (*(currentNode->name) != "PROGRAM")
 		return false;
 	if (currentNode->left == nullptr)
-		return false;
-	if (*(currentNode->left->name) != "ID")
-		return false;
-	progName = currentNode->left->value;
+	{
+		progName = new String();
+		progName->addMultiChar("result");
+	}
+	else
+		if (*(currentNode->left->name) == "ID")
+			progName = currentNode->left->value;
+		else
+			return false;
 	currentNode = currentNode->right;
 	SyntaxTree* splitPlace = currentNode;
-	currentNode = currentNode->left;
-	while (currentNode != nullptr)
+	if (currentNode != nullptr)
 	{
-		if (*currentNode->name == "SEQ")
+		currentNode = currentNode->left;
+		while (currentNode != nullptr)
 		{
-			if (currentNode->left != nullptr)
+			if (*currentNode->name == "SEQ")
 			{
-				if (!processDecls(currentNode->left))
-					return false;
+				if (currentNode->left != nullptr)
+				{
+					if (!processDecls(currentNode->left))
+						return false;
 
+				}
+				else
+					return false;
 			}
 			else
-				return false;
-		}
-		else
-			if (!processDecls(currentNode))
-				return false;
-		currentNode = currentNode->right;
-	}
-	currentNode = splitPlace->right;
-	while (currentNode != nullptr)
-	{
-		if (*currentNode->name == "SEQ")
-		{
-			if (currentNode->left != nullptr)
-			{
-				if (!processUsing(currentNode->left))
+				if (!processDecls(currentNode))
 					return false;
+			currentNode = currentNode->right;
+		}
+		currentNode = splitPlace->right;
+		while (currentNode != nullptr)
+		{
+			if (*currentNode->name == "SEQ")
+			{
+				if (currentNode->left != nullptr)
+				{
+					if (!processUsing(currentNode->left, nullptr))
+						return false;
 
+				}
+				else
+					return false;
 			}
 			else
-				return false;
+				if (!processUsing(currentNode, nullptr))
+					return false;
+			currentNode = currentNode->right;
 		}
-		else
-			if (!processUsing(currentNode))
-				return false;
-		currentNode = currentNode->right;
 	}
 	return true;
 }
@@ -402,7 +443,7 @@ int main()
 			}
 			genConsts();
 			if (useWriteln)
-				assemblerProgram->addMultiChar("includelib ucrt.lib\nincludelib legacy_stdio_definitions.lib\n\n");
+				assemblerProgram->addMultiChar("includelib kernel32.lib\nextrn WriteFile : PROC\nextrn GetStdHandle : PROC\n\n");
 			assemblerProgram->addString(assemblerConsts);
 			assemblerProgram->addMultiChar("\n");
 			assemblerProgram->addMultiChar(".data\n");
@@ -410,8 +451,55 @@ int main()
 			assemblerProgram->addString(assemblerData);
 			if (useWriteln)
 			{
-				assemblerProgram->addMultiChar("\nformat byte '%d', 10, 0\n");
-				assemblerProgram->addMultiChar("\n.code\nexterndef printf: PROC\nwriteln proc\nlea RCX, format\nxor RAX, RAX\ncall printf\nret\nwriteln endp\n\nmain proc\n");
+				assemblerProgram->addMultiChar("\noutSyms word 0\n"
+					"bytesWritten word 0\n\n"
+					".code\n"
+					"printSym proc\n"
+					"sub RSP, 40\n"
+					"mov RCX, -11\n"
+					"call GetStdHandle\n"
+					"mov RCX, RAX\n"
+					"lea RDX, [RSP + 48]\n"
+					"mov r8d, 1\n"
+					"lea r9, bytesWritten\n"
+					"mov qword ptr[rsp + 32], 0\n"
+					"call WriteFile\n"
+					"add RSP, 40\n"
+					"ret\n"
+					"printSym endp\n\n"
+					"writeln proc\n"
+					"pop R15\n"
+					"pop AX\n"
+					"cmp AX, 0\n"
+					"jns m1\n"
+					"mov R14W, AX\n"
+					"push '-'\n"
+					"inc outSyms\n"
+					"call printSym\n"
+					"add RSP, 2\n"
+					"mov AX, R14W\n"
+					"neg AX\n"
+					"m1: xor DX, DX\n"
+					"mov BX, 10\n"
+					"div BX\n"
+					"add DX, 48\n"
+					"push DX\n"
+					"inc outSyms\n"
+					"cmp AX, 0\n"
+					"jnz m1\n"
+					"m2: call printSym\n"
+					"add RSP, 2\n"
+					"dec outSyms\n"
+					"cmp outSyms, 0\n"
+					"jnz m2\n"
+					"push 10\n"
+					"call printSym\n"
+					"add RSP, 2\n"
+					"push R15\n"
+					"ret\n"
+					"writeln endp\n\n"
+					"main proc\n"
+				);
 			}
 			else
 				assemblerProgram->addMultiChar("\n.code\nmain proc\n");
