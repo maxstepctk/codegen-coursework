@@ -1,5 +1,6 @@
 #pragma once
 #include "paramelement.h"
+#include "varelement.h"
 #include "string.h"
 #include "dynarray.h"
 
@@ -8,6 +9,8 @@ class Function
 private:
 	String* name = nullptr;
 	DynArray<ParamElement*>* parameterList = nullptr;
+	int paramByValue = 0;
+	DynArray<VarElement*>* localVarList = nullptr;
 public:
 	Function(String* inpName)
 	{
@@ -17,6 +20,8 @@ public:
 	{
 		name = new String(inpName);
 		parameterList = new DynArray<ParamElement*>(*inpParameterList);
+		//int size = 
+		//for (int i)
 	}
 	~Function()
 	{

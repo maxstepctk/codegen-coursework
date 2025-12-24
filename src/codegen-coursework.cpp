@@ -103,19 +103,19 @@ bool genAssigment(SyntaxTree* assignHead, DynArray<ParamElement*>* funcParamLisr
 	{
 		if (*assignHead->right->name == "DECNUM")
 		{
-			assemblerSequence->addMultiChar("mov AX, ");
+			assemblerSequence->addMultiChar("mov EAX, ");
 			assemblerSequence->addString(assignHead->right->value);
 			assemblerSequence->addMultiChar("\nmov ");
 			assemblerSequence->addString(varName);
-			assemblerSequence->addMultiChar(", AX\n");
+			assemblerSequence->addMultiChar(", EAX\n");
 		}
 		if (*assignHead->right->name == "HEXNUM")
 		{
-			assemblerSequence->addMultiChar("mov AX, 0x");
+			assemblerSequence->addMultiChar("mov EAX, ");
 			assemblerSequence->addString(assignHead->right->value);
 			assemblerSequence->addMultiChar("\nmov ");
 			assemblerSequence->addString(varName);
-			assemblerSequence->addMultiChar(", AX\n");
+			assemblerSequence->addMultiChar(", EAX\n");
 		}
 		if (*assignHead->right->name == "BIN_OP")
 		{
@@ -126,37 +126,39 @@ bool genAssigment(SyntaxTree* assignHead, DynArray<ParamElement*>* funcParamLisr
 			{
 				if (*reversePolNot->top()->type == "ID")
 				{
-					assemblerSequence->addMultiChar("mov AX, ");
+					assemblerSequence->addMultiChar("mov EAX, ");
 					assemblerSequence->addString(reversePolNot->top()->value);
-					assemblerSequence->addMultiChar("\npush AX\n");
+					assemblerSequence->addMultiChar("\npush RAX\n");
 				}
 				if ((*reversePolNot->top()->type == "DECNUM") || (*reversePolNot->top()->type == "HEXNUM"))
 				{
-					assemblerSequence->addMultiChar("push ");
+					assemblerSequence->addMultiChar("mov EAX, ");
 					assemblerSequence->addString(reversePolNot->top()->value);
-					assemblerSequence->addMultiChar("\n");
+					assemblerSequence->addMultiChar("\npush RAX\n");
 				}
 				if (*reversePolNot->top()->type == "BIN_OP")
 				{
-					assemblerSequence->addMultiChar("pop BX\n");
-					assemblerSequence->addMultiChar("pop AX\n");
+					assemblerSequence->addMultiChar("pop RBX\n");
+					assemblerSequence->addMultiChar("pop RAX\n");
 					if (*reversePolNot->top()->value == "+")
-						assemblerSequence->addMultiChar("add AX, BX\n");
+						assemblerSequence->addMultiChar("add EAX, EBX\n");
 					else if (*reversePolNot->top()->value == "-")
-						assemblerSequence->addMultiChar("sub AX, BX\n");
+						assemblerSequence->addMultiChar("sub EAX, EBX\n");
 					else if (*reversePolNot->top()->value == "*")
-						assemblerSequence->addMultiChar("imul AX, BX\n");
+						assemblerSequence->addMultiChar("imul EAX, EBX\n");
 					else if (*reversePolNot->top()->value == "/")
 					{
-						assemblerSequence->addMultiChar("idiv BL\n");
-						assemblerSequence->addMultiChar("mov AH, 0\n");
+						assemblerSequence->addMultiChar("xor EDX, EDX\n");
+						assemblerSequence->addMultiChar("idiv EBX\n");
 					}
-					assemblerSequence->addMultiChar("push AX\n");
+					assemblerSequence->addMultiChar("push RAX\n");
 				}
 				reversePolNot->pop();
 			}
-			assemblerSequence->addMultiChar("pop ");
+			assemblerSequence->addMultiChar("pop RAX\n");
+			assemblerSequence->addMultiChar("mov ");
 			assemblerSequence->addString(varName);
+			assemblerSequence->addMultiChar(", EAX");
 			assemblerSequence->addMultiChar("\n");
 		}
 	}
@@ -285,13 +287,14 @@ bool genFuncDecl(SyntaxTree* funcHead)
 bool genWritelnCall(SyntaxTree* funcHead)
 {
 	useWriteln = true;
-	assemblerSequence->addMultiChar("push ");
+	assemblerSequence->addMultiChar("mov EAX, ");
 	if (funcHead->left != nullptr)
 	{
 		assemblerSequence->addString(funcHead->left->value);
 	}
 	else
 		return false;
+	assemblerSequence->addMultiChar("\npush RAX");
 	assemblerSequence->addMultiChar("\ncall writeln\n");
 	return true;
 }
@@ -303,7 +306,7 @@ bool genVars()
 		String* varType = (*varList)[i]->type;
 		String varSize;
 		if (*varType == "INTEGER")
-			varSize.addMultiChar("sword");
+			varSize.addMultiChar("sdword");
 		else
 			return false;
 		assemblerData->addString((*varList)[i]->name);
@@ -469,23 +472,23 @@ int main()
 					"printSym endp\n\n"
 					"writeln proc\n"
 					"pop R15\n"
-					"pop AX\n"
-					"cmp AX, 0\n"
+					"pop RAX\n"
+					"cmp EAX, 0\n"
 					"jns m1\n"
-					"mov R14W, AX\n"
+					"mov R14D, EAX\n"
 					"push '-'\n"
 					"inc outSyms\n"
 					"call printSym\n"
 					"add RSP, 2\n"
-					"mov AX, R14W\n"
-					"neg AX\n"
-					"m1: xor DX, DX\n"
-					"mov BX, 10\n"
-					"div BX\n"
-					"add DX, 48\n"
+					"mov EAX, R14D\n"
+					"neg EAX\n"
+					"m1: xor EDX, EDX\n"
+					"mov EBX, 10\n"
+					"div EBX\n"
+					"add EDX, 48\n"
 					"push DX\n"
 					"inc outSyms\n"
-					"cmp AX, 0\n"
+					"cmp EAX, 0\n"
 					"jnz m1\n"
 					"m2: call printSym\n"
 					"add RSP, 2\n"
