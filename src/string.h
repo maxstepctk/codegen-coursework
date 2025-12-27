@@ -103,7 +103,7 @@ public:
 			return false;
 		for (int i = 0; i < strsize; i++)
 		{
-			if (string[i] != str2[i])
+			if ((*string)[i] != str2[i])
 				return false;
 		}
 		return true;

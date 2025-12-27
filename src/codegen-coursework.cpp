@@ -83,17 +83,60 @@ bool readConsts(SyntaxTree* subTree)
 	return true;
 }
 
-void readRPN(SyntaxTree* subTree, Stack<StatElement*>* storage)
+void readRPN(SyntaxTree* subTree, Stack<StatElement*>* storage, Function* usingFunction)
 {
-	StatElement* tempElem = new StatElement(subTree->name, subTree->value);
+	bool pointerParamUse = false;
+	String* valueToAdd = subTree->value;
+	if (usingFunction != nullptr)
+	{
+		bool paramUsed = false;
+		int paramNum = usingFunction->returnParamPlace(valueToAdd);
+		int varNum = usingFunction->returnVarPlace(valueToAdd);
+		if (paramNum != 0)
+		{
+			ParamElement* requiredParam = usingFunction->returnParam(valueToAdd);
+			if ((*requiredParam->elemType == 2) || (*requiredParam->elemType == 3))
+			{
+				char buff[6];
+				paramNum *= 8;
+				valueToAdd = new String();
+				sprintf(buff, "%d", varNum);
+				valueToAdd->addMultiChar(buff);
+				pointerParamUse = true;
+				paramUsed = true;
+			}
+			else if (*requiredParam->elemType == 1)
+			{
+				char buff[6];
+				valueToAdd = new String();
+				valueToAdd->addMultiChar("[RBP+");
+				paramNum *= 8;
+				sprintf(buff, "%d", varNum);
+				valueToAdd->addMultiChar(buff);
+				valueToAdd->addMultiChar("]");
+				paramUsed = true;
+			}
+		}
+		if ((varNum != 0) && (!paramUsed))
+		{
+			char buff[6];
+			varNum *= 8;
+			valueToAdd = new String();
+			valueToAdd->addMultiChar("[RBP-");
+			sprintf(buff, "%d", varNum);
+			valueToAdd->addMultiChar(buff);
+			valueToAdd->addMultiChar("]");
+		}
+	}
+	StatElement* tempElem = new StatElement(subTree->name, valueToAdd, pointerParamUse);
 	storage->push(tempElem);
 	if (subTree->right != nullptr)
 	{
-		readRPN(subTree->right, storage);
+		readRPN(subTree->right, storage, usingFunction);
 	}
 	if (subTree->left != nullptr)
 	{
-		readRPN(subTree->left, storage);
+		readRPN(subTree->left, storage, usingFunction);
 	}
 }
 
@@ -103,44 +146,62 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 	bool usePointer = false;
 	if (assignHead->left != nullptr)
 	{
-		varName = assignHead->left->value;
 		if (operatingFunction != nullptr)
 		{
 			int varNum = operatingFunction->returnVarPlace(assignHead->left->value);
 			int paramNum = operatingFunction->returnParamPlace(assignHead->left->value);
-			bool varParam = false;
+			std::cout << "varNum: " << varNum << " paramNum: " << paramNum << std::endl;
+			bool useVar = false;
+			bool useParam = false;
 			if (varNum != 0)
 			{
-				varName->addMultiChar("[RBP+");
+				varName = new String();
+				char buff[6];
+				varName->addMultiChar("[RBP-");
 				varNum *= 8;
-				varName->addMultiChar((char*)varNum);
+				sprintf(buff, "%d", varNum);
+				varName->addMultiChar(buff);
 				varName->addMultiChar("]");
-				varParam = true;
+				useVar = true;
 			}
 			if (paramNum != 0)
 			{
-				ParamElement* elemForAssign = operatingFunction->returnParam(varName);
+				ParamElement* elemForAssign = operatingFunction->returnParam(assignHead->left->value);
+				std::cout << "Имя элемента для использования: " << *elemForAssign->name << ", тип: " << *elemForAssign->elemType << std::endl;
 				if (*elemForAssign->elemType == 1)
 				{
-					if (varParam)
+					char buf[6];
+					if (useVar)
 						delete varName;
 					varName = new String();
-					varName->addMultiChar("[RBP-");
+					varName->addMultiChar("[RBP+");
 					varNum *= 8;
-					varName->addMultiChar((char*)paramNum);
+					varNum -= 8;
+					sprintf(buf, "%d", varNum);
+					varName->addMultiChar(buf);
 					varName->addMultiChar("]");
+					useParam = true;
 				}
 				if (*elemForAssign->elemType == 2)
 				{
-					if (varParam)
+					char buf[6];
+					if (useVar)
 						delete varName;
 					varName = new String();
 					varNum *= 8;
-					varName->addMultiChar((char*)paramNum);
+					sprintf(buf, "%d", varNum);
+					varName->addMultiChar(buf);
 					usePointer = true;
+					useParam = true;
 				}
 			}
+			if ((!useVar) && (!useParam))
+			{
+				varName = assignHead->left->value;
+			}
 		}
+		else
+			varName = assignHead->left->value;
 	}
 	else
 		return false;
@@ -163,18 +224,42 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 				addingSequence->addMultiChar("\nmov [RBX], EAX\n");
 			}
 		}
+		if (*assignHead->right->name == "ID")
+		{
+			if (!usePointer)
+			{
+				addingSequence->addMultiChar("\nmov ");
+				addingSequence->addString(varName);
+				addingSequence->addMultiChar(", EAX\n");
+			}
+			else
+			{
+				addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
+				addingSequence->addString(varName);
+				addingSequence->addMultiChar("\nmov [RBX], EAX\n");
+			}
+		}
 		if (*assignHead->right->name == "BIN_OP")
 		{
 			Stack<StatElement*>* reversePolNot = new Stack<StatElement*>();
-			readRPN(assignHead->right, reversePolNot);
+			readRPN(assignHead->right, reversePolNot, operatingFunction);
 			int stackSize = reversePolNot->size();
 			for (int i = 0; i < stackSize; i++)
 			{
 				if (*reversePolNot->top()->type == "ID")
 				{
-					addingSequence->addMultiChar("mov EAX, ");
-					addingSequence->addString(reversePolNot->top()->value);
-					addingSequence->addMultiChar("\npush RAX\n");
+					if (reversePolNot->top()->isPointer == false)
+					{
+						addingSequence->addMultiChar("mov EAX, ");
+						addingSequence->addString(reversePolNot->top()->value);
+						addingSequence->addMultiChar("\npush RAX\n");
+					}
+					else
+					{
+						addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
+						addingSequence->addString(varName);
+						addingSequence->addMultiChar("\nmov EAX, [RBX]\npush RAX\n");
+					}
 				}
 				if ((*reversePolNot->top()->type == "DECNUM") || (*reversePolNot->top()->type == "HEXNUM"))
 				{
@@ -253,90 +338,6 @@ bool readFuncParams(SyntaxTree* paramHead, Function* funcToAdd)
 	std::cout << "Хочу создать элемент параметров" << std::endl;
 	ParamElement* paramToWrite = new ParamElement(paramName, paramType, elemType);
 	funcToAdd->addParameter(paramToWrite);
-	return true;
-}
-
-bool genFuncDecl(SyntaxTree* funcHead)
-{
-	String* funcName = nullptr;
-	if (funcHead->left != nullptr)
-	{
-		funcName = funcHead->left->value;
-	}
-	else
-		return false;
-
-	Function* newFunction = new Function(funcName);
-
-	if (funcHead->right != nullptr)
-	{
-		SyntaxTree* splitPlace = funcHead->right;
-		SyntaxTree* currentNode = splitPlace->left;
-		bool notEnd = true;
-		std::cout << "Начинаю обход параметров" << std::endl;
-		if (currentNode != nullptr)
-		{
-			while (currentNode != nullptr && notEnd)
-			{
-				if (*currentNode->name == "SEQ")
-				{
-					if (currentNode->left != nullptr)
-					{
-						std::cout << "Читаю параметры начала и середины" << std::endl;
-						if (!readFuncParams(currentNode->left, newFunction))
-							return false;
-					}
-					else
-						return false;
-				}
-				else
-				{
-					std::cout << "Читаю конечный параметр. " << std::endl; //*currentNode->left->name << std::endl;
-					notEnd = false;
-					if (!readFuncParams(currentNode, newFunction))
-					{
-						return false;
-					}
-				}
-				currentNode = currentNode->right;
-			}
-
-			newFunction->printParams();
-
-			currentNode = splitPlace->right;
-			//if (currentNode != nullptr)
-			//{
-			//	while (currentNode != nullptr && notEnd)
-			//	{
-			//		if (*currentNode->name == "SEQ")
-			//		{
-			//			if (currentNode->left != nullptr)
-			//			{
-			//				std::cout << "Читаю использование начала и середины" << std::endl;
-			//				if (!readFuncParams(currentNode->left, paramList))
-			//					return false;
-			//			}
-			//			else
-			//				return false;
-			//		}
-			//		else
-			//		{
-			//			std::cout << "Читаю конечное использование. " << std::endl; //*currentNode->left->name << std::endl;
-			//			notEnd = false;
-			//			if (!readFuncParams(currentNode, paramList))
-			//			{
-			//				return false;
-			//			}
-			//		}
-			//		currentNode = currentNode->right;
-			//	}
-			//}
-		}
-		else
-			return false;
-	}
-	else
-		return false;
 	return true;
 }
 
@@ -427,20 +428,6 @@ bool genConsts()
 	return true;
 }
 
-bool processDecls(SyntaxTree* currentNode)
-{
-	if (*(currentNode->name) == "VAR_DECL")
-		if (!readVars(currentNode, nullptr))
-			return false;
-	if (*(currentNode->name) == "CONST_DECL")
-		if (!readConsts(currentNode))
-			return false;
-	if (*(currentNode->name) == "FUNCTION")
-		if (!genFuncDecl(currentNode))
-			return false;
-	return true;
-}
-
 bool processUsing(SyntaxTree* currentNode, Function* inFunc, String* usingSequence)
 {
 	if (*(currentNode->name) == "ASSIGN")
@@ -451,6 +438,159 @@ bool processUsing(SyntaxTree* currentNode, Function* inFunc, String* usingSequen
 	//		return false;
 	if (*(currentNode->name) == "WRITELN")
 		if (!genWritelnCall(currentNode, inFunc, usingSequence))
+			return false;
+	return true;
+}
+
+bool genFuncDecl(SyntaxTree* funcHead)
+{
+	String* funcName = nullptr;
+	if (funcHead->left != nullptr)
+	{
+		funcName = funcHead->left->value;
+	}
+	else
+		return false;
+
+	Function* newFunction = new Function(funcName);
+
+	if (funcHead->right != nullptr)
+	{
+		SyntaxTree* splitPlace = funcHead->right;
+		SyntaxTree* currentNode = splitPlace->left;
+		bool notEnd = true;
+		std::cout << "Начинаю обход параметров" << std::endl;
+		if (currentNode != nullptr)
+		{
+			while (currentNode != nullptr && notEnd)
+			{
+				if (*currentNode->name == "SEQ")
+				{
+					if (currentNode->left != nullptr)
+					{
+						std::cout << "Читаю параметры начала и середины" << std::endl;
+						if (!readFuncParams(currentNode->left, newFunction))
+							return false;
+					}
+					else
+						return false;
+				}
+				else
+				{
+					std::cout << "Читаю конечный параметр. " << std::endl; //*currentNode->left->name << std::endl;
+					notEnd = false;
+					if (!readFuncParams(currentNode, newFunction))
+					{
+						return false;
+					}
+				}
+				currentNode = currentNode->right;
+			}
+
+			newFunction->printParams();
+
+			currentNode = splitPlace->right;
+			if (currentNode != nullptr)
+			{
+				if (*currentNode->left->name == "type")
+					newFunction->setFuncType(currentNode->left->value);
+				currentNode = currentNode->right;
+				if (currentNode != nullptr)
+				{
+					if (*currentNode->name == "SEQ")
+					{
+						splitPlace = currentNode;
+						currentNode = currentNode->left;
+						notEnd = true;
+						std::cout << "Начинаю генерировать локальные переменные функции" << std::endl;
+						while ((currentNode != nullptr) && notEnd)
+						{
+							if (*currentNode->name == "SEQ")
+							{
+								if (currentNode->left != nullptr)
+								{
+									std::cout << "Левая нода существует" << std::endl;
+									if (!readVars(currentNode->left, newFunction))
+										return false;
+
+								}
+								else
+									return false;
+							}
+							else
+							{
+								std::cout << "Обработка конца" << std::endl;
+								notEnd = false;
+								if (!readVars(currentNode, newFunction))
+									return false;
+							}
+							currentNode = currentNode->right;
+						}
+						std::cout << "Чтение локальных переменных закончил. Выделяю для них память." << std::endl;
+						newFunction->genLocalVarSpace();
+						currentNode = splitPlace->right;
+					}
+					if (currentNode != nullptr)
+					{
+						std::cout << "на " << *currentNode->name << std::endl;
+						if (*currentNode->name == "COMPOUND_STMT")
+						{
+							notEnd = true;
+							String* funcSeq = newFunction->returnFuncSeq();
+							currentNode = currentNode->left;
+							while (currentNode != nullptr && notEnd)
+							{
+								if (*currentNode->name == "SEQ")
+								{
+									if (currentNode->left != nullptr)
+									{
+										std::cout << "Читаю использование начала и середины" << std::endl;
+										if (!processUsing(currentNode->left, newFunction, funcSeq))
+											return false;
+									}
+									else
+										return false;
+								}
+								else
+								{
+									std::cout << "Читаю конечное использование. " << std::endl; //*currentNode->left->name << std::endl;
+									notEnd = false;
+									if (!processUsing(currentNode, newFunction, funcSeq))
+									{
+										return false;
+									}
+								}
+								currentNode = currentNode->right;
+							}
+							newFunction->genSeqEnd();
+						}
+						else
+							return false;
+					}
+				}
+			}
+		}
+		else
+			return false;
+	}
+	else
+	{
+		return false;
+	}
+	functionList->push_back(newFunction);
+	return true;
+}
+
+bool processDecls(SyntaxTree* currentNode)
+{
+	if (*(currentNode->name) == "VAR_DECL")
+		if (!readVars(currentNode, nullptr))
+			return false;
+	if (*(currentNode->name) == "CONST_DECL")
+		if (!readConsts(currentNode))
+			return false;
+	if (*(currentNode->name) == "FUNCTION")
+		if (!genFuncDecl(currentNode))
 			return false;
 	return true;
 }
@@ -597,11 +737,21 @@ int main()
 					"push R15\n"
 					"ret\n"
 					"writeln endp\n\n"
-					"main proc\n"
 				);
 			}
 			else
-				assemblerProgram->addMultiChar("\n.code\nmain proc\n");
+				assemblerProgram->addMultiChar("\n.code\n");
+			int funcCount = functionList->size();
+			for (int i = 0; i < funcCount; i++)
+			{
+				Function* currFunc = (*functionList)[i];
+				assemblerProgram->addString(currFunc->returnFuncName());
+				assemblerProgram->addMultiChar(" proc\n");
+				assemblerProgram->addString(currFunc->returnFuncSeq());
+				assemblerProgram->addString(currFunc->returnFuncName());
+				assemblerProgram->addMultiChar(" endp\n\n");
+			}
+			assemblerProgram->addMultiChar("main proc\n");
 			assemblerProgram->addString(assemblerSequence);
 			assemblerProgram->addMultiChar("main endp\nend\n");
 			std::cout << "\nРезультирующая программа:\n" << *assemblerProgram << std::endl;
