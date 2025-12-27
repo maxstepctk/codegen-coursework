@@ -14,7 +14,7 @@ String* assemblerProgram = new String();
 bool useWriteln = false;
 int intSize = 2;
 
-bool readVars(SyntaxTree* subTree)
+bool readVars(SyntaxTree* subTree, Function* funcToAdd)
 {
 	SyntaxTree* treeVar = subTree;
 	String* addingVarName = nullptr;
@@ -39,7 +39,12 @@ bool readVars(SyntaxTree* subTree)
 		}
 		else
 			return false;
-		varList->push_back(new VarElement(addingVarName, addingVarType));
+		if (funcToAdd == nullptr)
+			varList->push_back(new VarElement(addingVarName, addingVarType));
+		else
+		{
+			funcToAdd->addVar(new VarElement(addingVarName, addingVarType));
+		}
 	}
 	else
 		return false;
@@ -92,30 +97,71 @@ void readRPN(SyntaxTree* subTree, Stack<StatElement*>* storage)
 	}
 }
 
-bool genAssigment(SyntaxTree* assignHead, DynArray<ParamElement*>* funcParamLisr)
+bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* addingSequence)
 {
 	String* varName = nullptr;
+	bool usePointer = false;
 	if (assignHead->left != nullptr)
+	{
 		varName = assignHead->left->value;
+		if (operatingFunction != nullptr)
+		{
+			int varNum = operatingFunction->returnVarPlace(assignHead->left->value);
+			int paramNum = operatingFunction->returnParamPlace(assignHead->left->value);
+			bool varParam = false;
+			if (varNum != 0)
+			{
+				varName->addMultiChar("[RBP+");
+				varNum *= 8;
+				varName->addMultiChar((char*)varNum);
+				varName->addMultiChar("]");
+				varParam = true;
+			}
+			if (paramNum != 0)
+			{
+				ParamElement* elemForAssign = operatingFunction->returnParam(varName);
+				if (*elemForAssign->elemType == 1)
+				{
+					if (varParam)
+						delete varName;
+					varName = new String();
+					varName->addMultiChar("[RBP-");
+					varNum *= 8;
+					varName->addMultiChar((char*)paramNum);
+					varName->addMultiChar("]");
+				}
+				if (*elemForAssign->elemType == 2)
+				{
+					if (varParam)
+						delete varName;
+					varName = new String();
+					varNum *= 8;
+					varName->addMultiChar((char*)paramNum);
+					usePointer = true;
+				}
+			}
+		}
+	}
 	else
 		return false;
 	if (assignHead->right != nullptr)
 	{
-		if (*assignHead->right->name == "DECNUM")
+		if ((*assignHead->right->name == "DECNUM") || (*assignHead->right->name == "HEXNUM"))
 		{
-			assemblerSequence->addMultiChar("mov EAX, ");
-			assemblerSequence->addString(assignHead->right->value);
-			assemblerSequence->addMultiChar("\nmov ");
-			assemblerSequence->addString(varName);
-			assemblerSequence->addMultiChar(", EAX\n");
-		}
-		if (*assignHead->right->name == "HEXNUM")
-		{
-			assemblerSequence->addMultiChar("mov EAX, ");
-			assemblerSequence->addString(assignHead->right->value);
-			assemblerSequence->addMultiChar("\nmov ");
-			assemblerSequence->addString(varName);
-			assemblerSequence->addMultiChar(", EAX\n");
+			addingSequence->addMultiChar("mov EAX, ");
+			addingSequence->addString(assignHead->right->value);
+			if (!usePointer)
+			{
+				addingSequence->addMultiChar("\nmov ");
+				addingSequence->addString(varName);
+				addingSequence->addMultiChar(", EAX\n");
+			}
+			else
+			{
+				addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
+				addingSequence->addString(varName);
+				addingSequence->addMultiChar("\nmov [RBX], EAX\n");
+			}
 		}
 		if (*assignHead->right->name == "BIN_OP")
 		{
@@ -126,40 +172,50 @@ bool genAssigment(SyntaxTree* assignHead, DynArray<ParamElement*>* funcParamLisr
 			{
 				if (*reversePolNot->top()->type == "ID")
 				{
-					assemblerSequence->addMultiChar("mov EAX, ");
-					assemblerSequence->addString(reversePolNot->top()->value);
-					assemblerSequence->addMultiChar("\npush RAX\n");
+					addingSequence->addMultiChar("mov EAX, ");
+					addingSequence->addString(reversePolNot->top()->value);
+					addingSequence->addMultiChar("\npush RAX\n");
 				}
 				if ((*reversePolNot->top()->type == "DECNUM") || (*reversePolNot->top()->type == "HEXNUM"))
 				{
-					assemblerSequence->addMultiChar("mov EAX, ");
-					assemblerSequence->addString(reversePolNot->top()->value);
-					assemblerSequence->addMultiChar("\npush RAX\n");
+					addingSequence->addMultiChar("mov EAX, ");
+					addingSequence->addString(reversePolNot->top()->value);
+					addingSequence->addMultiChar("\npush RAX\n");
 				}
 				if (*reversePolNot->top()->type == "BIN_OP")
 				{
-					assemblerSequence->addMultiChar("pop RBX\n");
-					assemblerSequence->addMultiChar("pop RAX\n");
+					addingSequence->addMultiChar("pop RBX\n");
+					addingSequence->addMultiChar("pop RAX\n");
 					if (*reversePolNot->top()->value == "+")
-						assemblerSequence->addMultiChar("add EAX, EBX\n");
+						addingSequence->addMultiChar("add EAX, EBX\n");
 					else if (*reversePolNot->top()->value == "-")
-						assemblerSequence->addMultiChar("sub EAX, EBX\n");
+						addingSequence->addMultiChar("sub EAX, EBX\n");
 					else if (*reversePolNot->top()->value == "*")
-						assemblerSequence->addMultiChar("imul EAX, EBX\n");
+						addingSequence->addMultiChar("imul EAX, EBX\n");
 					else if (*reversePolNot->top()->value == "/")
 					{
-						assemblerSequence->addMultiChar("xor EDX, EDX\n");
-						assemblerSequence->addMultiChar("idiv EBX\n");
+						addingSequence->addMultiChar("xor EDX, EDX\n");
+						addingSequence->addMultiChar("idiv EBX\n");
 					}
-					assemblerSequence->addMultiChar("push RAX\n");
+					addingSequence->addMultiChar("push RAX\n");
 				}
 				reversePolNot->pop();
 			}
-			assemblerSequence->addMultiChar("pop RAX\n");
-			assemblerSequence->addMultiChar("mov ");
-			assemblerSequence->addString(varName);
-			assemblerSequence->addMultiChar(", EAX");
-			assemblerSequence->addMultiChar("\n");
+			if (!usePointer)
+			{
+				addingSequence->addMultiChar("pop RAX\n");
+				addingSequence->addMultiChar("mov ");
+				addingSequence->addString(varName);
+				addingSequence->addMultiChar(", EAX");
+				addingSequence->addMultiChar("\n");
+			}
+			else
+			{
+				addingSequence->addMultiChar("pop RAX\n");
+				addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
+				addingSequence->addString(varName);
+				addingSequence->addMultiChar("\nmov [RBX], EAX\n");
+			}
 		}
 	}
 	else
@@ -284,16 +340,56 @@ bool genFuncDecl(SyntaxTree* funcHead)
 	return true;
 }
 
-bool genWritelnCall(SyntaxTree* funcHead)
+bool genWritelnCall(SyntaxTree* funcHead, Function* useInFunc, String* addingSequence)
 {
 	useWriteln = true;
-	assemblerSequence->addMultiChar("mov EAX, ");
-	if (funcHead->left != nullptr)
+	if (useInFunc == nullptr)
 	{
-		assemblerSequence->addString(funcHead->left->value);
+		assemblerSequence->addMultiChar("mov EAX, ");
+		if (funcHead->left != nullptr)
+		{
+			assemblerSequence->addString(funcHead->left->value);
+		}
+		else
+			return false;
 	}
 	else
-		return false;
+	{
+		bool paramUsed = false;
+		bool varUsed = false;
+		int paramNum = useInFunc->returnParamPlace(funcHead->left->value);
+		int varNum = useInFunc->returnVarPlace(funcHead->left->value);
+		if (paramNum != 0)
+		{
+			ParamElement* requiredParam = useInFunc->returnParam(funcHead->left->value);
+			if ((*requiredParam->elemType == 2) || (*requiredParam->elemType == 3))
+			{
+				addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
+				paramNum *= 8;
+				addingSequence->addMultiChar((char*)paramNum);
+				addingSequence->addMultiChar("\nmov EAX, [RBX]\n");
+				paramUsed = true;
+			}
+			else if (*requiredParam->elemType == 1)
+			{
+				addingSequence->addMultiChar("mov EAX, [RBP+");
+				paramNum *= 8;
+				addingSequence->addMultiChar((char*)paramNum);
+				addingSequence->addMultiChar("]\n");
+				paramUsed = true;
+			}
+		}
+		if ((varNum != 0) && (!paramUsed))
+		{
+			varNum *= 8;
+			addingSequence->addMultiChar("mov EAX, [RBP-");
+			addingSequence->addMultiChar((char*)varNum);
+			addingSequence->addMultiChar("]\n");
+			varUsed = true;
+		}
+		if ((!paramUsed) && (!varUsed))
+			assemblerSequence->addString(funcHead->left->value);
+	}
 	assemblerSequence->addMultiChar("\npush RAX");
 	assemblerSequence->addMultiChar("\ncall writeln\n");
 	return true;
@@ -334,7 +430,7 @@ bool genConsts()
 bool processDecls(SyntaxTree* currentNode)
 {
 	if (*(currentNode->name) == "VAR_DECL")
-		if (!readVars(currentNode))
+		if (!readVars(currentNode, nullptr))
 			return false;
 	if (*(currentNode->name) == "CONST_DECL")
 		if (!readConsts(currentNode))
@@ -345,16 +441,16 @@ bool processDecls(SyntaxTree* currentNode)
 	return true;
 }
 
-bool processUsing(SyntaxTree* currentNode, DynArray<ParamElement*>* funcParamList)
+bool processUsing(SyntaxTree* currentNode, Function* inFunc, String* usingSequence)
 {
 	if (*(currentNode->name) == "ASSIGN")
-		if (!genAssigment(currentNode, funcParamList))
+		if (!genAssigment(currentNode, inFunc, usingSequence))
 			return false;
 	//if (*(currentNode->name) == "FUNC_CALL")
 	//	if (!genFuncCall(currentNode))
 	//		return false;
 	if (*(currentNode->name) == "WRITELN")
-		if (!genWritelnCall(currentNode))
+		if (!genWritelnCall(currentNode, inFunc, usingSequence))
 			return false;
 	return true;
 }
@@ -404,7 +500,7 @@ bool parseTree(SyntaxTree* treeHead)
 			{
 				if (currentNode->left != nullptr)
 				{
-					if (!processUsing(currentNode->left, nullptr))
+					if (!processUsing(currentNode->left, nullptr, assemblerSequence))
 						return false;
 
 				}
@@ -412,7 +508,7 @@ bool parseTree(SyntaxTree* treeHead)
 					return false;
 			}
 			else
-				if (!processUsing(currentNode, nullptr))
+				if (!processUsing(currentNode, nullptr, assemblerSequence))
 					return false;
 			currentNode = currentNode->right;
 		}
