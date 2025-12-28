@@ -915,7 +915,7 @@ public:
 					std::cout << *(*constList)[i]->name << " " << *(*constList)[i]->type << " " << *(*constList)[i]->value << std::endl;
 				}
 				std::cout << "\n\nРазмер массива функций: " << functionList->size() << std::endl;
-				for (int i = 0; i < constList->size(); i++)
+				for (int i = 0; i < functionList->size(); i++)
 				{
 					std::cout << "\nФункция " << *(*functionList)[i]->returnFuncName() << "\nПараметры:" << std::endl;
 					(*functionList)[i]->printParams();
