@@ -10,7 +10,7 @@ private:
 	String* name = nullptr;
 	String* functionSequence = nullptr;
 	DynArray<ParamElement*>* parameterList = nullptr;
-	int localVarCount = 0;
+	int localVarCount = 1; // первая - результат
 	DynArray<VarElement*>* localVarList = nullptr;
 	String* funcType = nullptr;
 public:
@@ -140,16 +140,25 @@ public:
 
 	void genSeqEnd()
 	{
-		int space = localVarCount * 8; // тип только integer
+		functionSequence->addMultiChar("mov R11, [RBP]\n");
+		int space = (localVarCount + parameterList->size()) * 8; // пока тип только integer
 		char buff[6];
 		sprintf(buff, "%d\n", space);
 		functionSequence->addMultiChar("add RSP, ");
 		functionSequence->addMultiChar(buff);
-		functionSequence->addMultiChar("mov RBP, R13\npush R12\nret\n");
+		functionSequence->addMultiChar("mov RBP, R13\npush R11\npush R12\nret\n");
 	}
 
 	String* returnFuncName()
 	{
 		return name;
+	}
+
+	int returnParamType(int natPlace)
+	{
+		if (natPlace <= parameterList->size())
+			return *(*parameterList)[natPlace-1]->elemType;
+		else
+			return 0;
 	}
 };

@@ -100,7 +100,7 @@ void readRPN(SyntaxTree* subTree, Stack<StatElement*>* storage, Function* usingF
 				char buff[6];
 				paramNum *= 8;
 				valueToAdd = new String();
-				sprintf(buff, "%d", varNum);
+				sprintf(buff, "%d", paramNum);
 				valueToAdd->addMultiChar(buff);
 				pointerParamUse = true;
 				paramUsed = true;
@@ -111,7 +111,7 @@ void readRPN(SyntaxTree* subTree, Stack<StatElement*>* storage, Function* usingF
 				valueToAdd = new String();
 				valueToAdd->addMultiChar("[RBP+");
 				paramNum *= 8;
-				sprintf(buff, "%d", varNum);
+				sprintf(buff, "%d", paramNum);
 				valueToAdd->addMultiChar(buff);
 				valueToAdd->addMultiChar("]");
 				paramUsed = true;
@@ -140,6 +140,11 @@ void readRPN(SyntaxTree* subTree, Stack<StatElement*>* storage, Function* usingF
 	}
 }
 
+//void genFuncReturn(String* addingSequence, bool isRightReturn)
+//{
+//
+//}
+
 bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* addingSequence)
 {
 	String* varName = nullptr;
@@ -148,56 +153,63 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 	{
 		if (operatingFunction != nullptr)
 		{
-			int varNum = operatingFunction->returnVarPlace(assignHead->left->value);
-			int paramNum = operatingFunction->returnParamPlace(assignHead->left->value);
-			std::cout << "varNum: " << varNum << " paramNum: " << paramNum << std::endl;
-			bool useVar = false;
-			bool useParam = false;
-			if (varNum != 0)
+			if (*assignHead->left->value != *operatingFunction->returnFuncName())
+			{
+				int varNum = operatingFunction->returnVarPlace(assignHead->left->value);
+				int paramNum = operatingFunction->returnParamPlace(assignHead->left->value);
+				std::cout << "varNum: " << varNum << " paramNum: " << paramNum << std::endl;
+				bool useVar = false;
+				bool useParam = false;
+				if (varNum != 0)
+				{
+					varName = new String();
+					char buff[6];
+					varName->addMultiChar("[RBP-");
+					varNum *= 8;
+					sprintf(buff, "%d", varNum);
+					varName->addMultiChar(buff);
+					varName->addMultiChar("]");
+					useVar = true;
+				}
+				if (paramNum != 0)
+				{
+					ParamElement* elemForAssign = operatingFunction->returnParam(assignHead->left->value);
+					std::cout << "Имя элемента для использования: " << *elemForAssign->name << ", тип: " << *elemForAssign->elemType << std::endl;
+					if (*elemForAssign->elemType == 1)
+					{
+						char buf[6];
+						if (useVar)
+							delete varName;
+						varName = new String();
+						varName->addMultiChar("[RBP+");
+						varNum *= 8;
+						sprintf(buf, "%d", varNum);
+						varName->addMultiChar(buf);
+						varName->addMultiChar("]");
+						useParam = true;
+					}
+					if (*elemForAssign->elemType == 2)
+					{
+						char buf[6];
+						if (useVar)
+							delete varName;
+						varName = new String();
+						varNum *= 8;
+						sprintf(buf, "%d", varNum);
+						varName->addMultiChar(buf);
+						usePointer = true;
+						useParam = true;
+					}
+				}
+				if ((!useVar) && (!useParam))
+				{
+					varName = assignHead->left->value;
+				}
+			}
+			else
 			{
 				varName = new String();
-				char buff[6];
-				varName->addMultiChar("[RBP-");
-				varNum *= 8;
-				sprintf(buff, "%d", varNum);
-				varName->addMultiChar(buff);
-				varName->addMultiChar("]");
-				useVar = true;
-			}
-			if (paramNum != 0)
-			{
-				ParamElement* elemForAssign = operatingFunction->returnParam(assignHead->left->value);
-				std::cout << "Имя элемента для использования: " << *elemForAssign->name << ", тип: " << *elemForAssign->elemType << std::endl;
-				if (*elemForAssign->elemType == 1)
-				{
-					char buf[6];
-					if (useVar)
-						delete varName;
-					varName = new String();
-					varName->addMultiChar("[RBP+");
-					varNum *= 8;
-					varNum -= 8;
-					sprintf(buf, "%d", varNum);
-					varName->addMultiChar(buf);
-					varName->addMultiChar("]");
-					useParam = true;
-				}
-				if (*elemForAssign->elemType == 2)
-				{
-					char buf[6];
-					if (useVar)
-						delete varName;
-					varName = new String();
-					varNum *= 8;
-					sprintf(buf, "%d", varNum);
-					varName->addMultiChar(buf);
-					usePointer = true;
-					useParam = true;
-				}
-			}
-			if ((!useVar) && (!useParam))
-			{
-				varName = assignHead->left->value;
+				varName->addMultiChar("[RBP]");
 			}
 		}
 		else
@@ -226,14 +238,91 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 		}
 		if (*assignHead->right->name == "ID")
 		{
+			bool paramUsed = false;
+			bool pointerRightUse = false;
+			bool varUsed = false;
+			int paramNum = operatingFunction->returnParamPlace(assignHead->right->value);
+			int varNum = operatingFunction->returnVarPlace(assignHead->right->value);
+			String* addrOfRight = nullptr;
+			if (paramNum != 0)
+			{
+				ParamElement* requiredParam = operatingFunction->returnParam(assignHead->right->value);
+				if ((*requiredParam->elemType == 2) || (*requiredParam->elemType == 3))
+				{
+					char buff[6];
+					paramNum *= 8;
+					sprintf(buff, "%d", paramNum);
+					addrOfRight = new String();
+					addrOfRight->addMultiChar(buff);
+					pointerRightUse = true;
+					paramUsed = true;
+				}
+				else if (*requiredParam->elemType == 1)
+				{
+					char buff[6];
+					addrOfRight = new String();
+					addrOfRight->addMultiChar("[RBP+");
+					paramNum *= 8;
+					sprintf(buff, "%d", paramNum);
+					addrOfRight->addMultiChar(buff);
+					addrOfRight->addMultiChar("]");
+					paramUsed = true;
+				}
+				if ((varNum != 0) && (!paramUsed))
+				{
+					char buff[6];
+					varNum *= 8;
+					addrOfRight = new String();
+					addrOfRight->addMultiChar("[RBP-");
+					sprintf(buff, "%d", varNum);
+					addrOfRight->addMultiChar(buff);
+					addrOfRight->addMultiChar("]");
+					varUsed = true;
+				}
+			}
 			if (!usePointer)
 			{
+				if (!pointerRightUse)
+				{
+					addingSequence->addMultiChar(";Не указатель\n");
+					addingSequence->addMultiChar("mov EAX, ");
+					if ((!varUsed) && (!paramUsed))
+						addingSequence->addString(assignHead->right->value);
+					else
+					{
+						addingSequence->addString(addrOfRight);
+						delete addrOfRight;
+					}
+				}
+				else
+				{
+					addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
+					addingSequence->addString(addrOfRight);
+					addingSequence->addMultiChar("\nmov EAX, [EBX]\n");
+				}
 				addingSequence->addMultiChar("\nmov ");
 				addingSequence->addString(varName);
 				addingSequence->addMultiChar(", EAX\n");
 			}
 			else
 			{
+				if (!pointerRightUse)
+				{
+					addingSequence->addMultiChar("\nmov EAX, ");
+					if (!varUsed)
+						addingSequence->addString(assignHead->right->value);
+					else
+					{
+						addingSequence->addString(addrOfRight);
+						delete addrOfRight;
+					}
+				}
+				else
+				{
+					addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
+					addingSequence->addString(addrOfRight);
+					addingSequence->addMultiChar("\nmov EAX, [EBX]\n");
+				}
 				addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
 				addingSequence->addString(varName);
 				addingSequence->addMultiChar("\nmov [RBX], EAX\n");
@@ -248,8 +337,9 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 			{
 				if (*reversePolNot->top()->type == "ID")
 				{
-					if (reversePolNot->top()->isPointer == false)
+					if (!(reversePolNot->top()->isPointer))
 					{
+						addingSequence->addMultiChar(";Не isPointer\n");
 						addingSequence->addMultiChar("mov EAX, ");
 						addingSequence->addString(reversePolNot->top()->value);
 						addingSequence->addMultiChar("\npush RAX\n");
@@ -263,6 +353,7 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 				}
 				if ((*reversePolNot->top()->type == "DECNUM") || (*reversePolNot->top()->type == "HEXNUM"))
 				{
+					addingSequence->addMultiChar(";Число\n");
 					addingSequence->addMultiChar("mov EAX, ");
 					addingSequence->addString(reversePolNot->top()->value);
 					addingSequence->addMultiChar("\npush RAX\n");
@@ -365,26 +456,32 @@ bool genWritelnCall(SyntaxTree* funcHead, Function* useInFunc, String* addingSeq
 			ParamElement* requiredParam = useInFunc->returnParam(funcHead->left->value);
 			if ((*requiredParam->elemType == 2) || (*requiredParam->elemType == 3))
 			{
+				char buff[6];
 				addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
 				paramNum *= 8;
-				addingSequence->addMultiChar((char*)paramNum);
+				sprintf(buff, "%d", varNum);
+				addingSequence->addMultiChar(buff);
 				addingSequence->addMultiChar("\nmov EAX, [RBX]\n");
 				paramUsed = true;
 			}
 			else if (*requiredParam->elemType == 1)
 			{
+				char buff[6];
 				addingSequence->addMultiChar("mov EAX, [RBP+");
 				paramNum *= 8;
-				addingSequence->addMultiChar((char*)paramNum);
+				sprintf(buff, "%d", varNum);
+				addingSequence->addMultiChar(buff);
 				addingSequence->addMultiChar("]\n");
 				paramUsed = true;
 			}
 		}
 		if ((varNum != 0) && (!paramUsed))
 		{
+			char buff[6];
 			varNum *= 8;
 			addingSequence->addMultiChar("mov EAX, [RBP-");
-			addingSequence->addMultiChar((char*)varNum);
+			sprintf(buff, "%d", varNum);
+			addingSequence->addMultiChar(buff);
 			addingSequence->addMultiChar("]\n");
 			varUsed = true;
 		}
@@ -428,14 +525,95 @@ bool genConsts()
 	return true;
 }
 
+bool readFuncCallParams(SyntaxTree* paramHead, Function* operatingFunction, Stack<ParamElement*>* parameterStack, int paramNum)
+{
+	String* name = nullptr;
+	String* dataType = nullptr;
+	int elemType = 0;
+	if (paramHead->left != nullptr)
+	{
+		if (*paramHead->left->name == "ID")
+		{
+			name = paramHead->left->value;
+		}
+		else
+			return false;
+	}
+	else
+		return false;
+	if (paramHead->right != nullptr)
+	{
+		if (*paramHead->left->name == "TYPE")
+		{
+			dataType = paramHead->left->value;
+		}
+		else
+			return false;
+	}
+	else
+		return false;
+	elemType = operatingFunction->returnParamType(paramNum);
+	ParamElement* newCallParam = new ParamElement(name, dataType, elemType);
+	delete name;
+	delete dataType;
+	parameterStack->push(newCallParam);
+}
+
+bool genFuncCall(SyntaxTree* assignHead, Function* operatingFunction, String* addingSequence)
+{
+	if (assignHead != nullptr)
+	{
+		if (*assignHead->left->name == "ID")
+		{
+			int paramNum = 1;
+			String* funcName = assignHead->left->value;
+			SyntaxTree* currentNode = assignHead->right;
+			Stack<ParamElement*>* parameterStack = new Stack<ParamElement*>;
+			bool notEnd = true;
+			if (currentNode != nullptr)
+			{
+				while (currentNode != nullptr && notEnd)
+				{
+					if (*currentNode->name == "SEQ")
+					{
+						if (currentNode->left != nullptr)
+						{
+							std::cout << "Читаю параметры начала и середины" << std::endl;
+							if (!readFuncCallParams(currentNode->left, operatingFunction, parameterStack, paramNum))
+								return false;
+						}
+						else
+							return false;
+					}
+					else
+					{
+						std::cout << "Читаю конечный параметр. " << std::endl; //*currentNode->left->name << std::endl;
+						notEnd = false;
+						if (!readFuncCallParams(currentNode, operatingFunction, parameterStack, paramNum))
+						{
+							return false;
+						}
+					}
+					currentNode = currentNode->right;
+					paramNum++;
+				}
+			}
+		}
+		else
+			return false;
+	}
+	else
+		return false;
+}
+
 bool processUsing(SyntaxTree* currentNode, Function* inFunc, String* usingSequence)
 {
 	if (*(currentNode->name) == "ASSIGN")
 		if (!genAssigment(currentNode, inFunc, usingSequence))
 			return false;
-	//if (*(currentNode->name) == "FUNC_CALL")
-	//	if (!genFuncCall(currentNode))
-	//		return false;
+	if (*(currentNode->name) == "FUNC_CALL")
+		if (!genFuncCall(currentNode, inFunc, usingSequence))
+			return false;
 	if (*(currentNode->name) == "WRITELN")
 		if (!genWritelnCall(currentNode, inFunc, usingSequence))
 			return false;
