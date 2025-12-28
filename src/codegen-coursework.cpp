@@ -140,10 +140,125 @@ void readRPN(SyntaxTree* subTree, Stack<StatElement*>* storage, Function* usingF
 	}
 }
 
-//void genFuncReturn(String* addingSequence, bool isRightReturn)
-//{
-//
-//}
+bool readFuncCallParam(SyntaxTree* paramHead, Function* callingFunction, Stack<ParamElement*>* parameterStack, int paramNum)
+{
+	String* name = nullptr;
+	String* dataType = nullptr;
+	int elemType = 0;
+	if (paramHead->left != nullptr)
+	{
+		std::cout << "paramHead->left не nullptr" << std::endl;
+		if (*paramHead->left->name == "ID")
+		{
+			std::cout << "Слева ID" << std::endl;
+			name = paramHead->left->value;
+		}
+		else
+			return false;
+	}
+	else
+		return false;
+	if (paramHead->right != nullptr)
+	{
+		std::cout << "paramHead->right не nullptr" << std::endl;
+		if (*paramHead->right->name == "TYPE")
+		{
+			std::cout << "Справа TYPE" << std::endl;
+			dataType = paramHead->left->value;
+		}
+		else
+			return false;
+	}
+	else
+		return false;
+	elemType = callingFunction->returnParamType(paramNum);
+	ParamElement* newCallParam = new ParamElement(name, dataType, elemType);
+	//delete name;
+	//delete dataType;
+	parameterStack->push(newCallParam);
+	return true;
+}
+
+bool genFuncCall(SyntaxTree* callHead, Function* operatingFunction, String* addingSequence)
+{
+	if (callHead != nullptr)
+	{
+		if (*callHead->left->name == "ID")
+		{
+			int paramNum = 1;
+			String* funcName = callHead->left->value;
+			int funcListSize = functionList->size();
+			Function* callingFunction = nullptr;
+			for (int i = 0; i < funcListSize; i++)
+			{
+				if (*(*functionList)[i]->returnFuncName() == *funcName)
+					callingFunction = (*functionList)[i];
+			}
+			if (callingFunction == nullptr)
+				return false;
+			SyntaxTree* currentNode = callHead->right;
+			Stack<ParamElement*>* parameterStack = new Stack<ParamElement*>;
+			bool notEnd = true;
+			if (currentNode != nullptr)
+			{
+				while (currentNode != nullptr && notEnd)
+				{
+					if (*currentNode->name == "SEQ")
+					{
+						if (currentNode->left != nullptr)
+						{
+							std::cout << "Читаю параметры начала и середины" << std::endl;
+							if (!readFuncCallParam(currentNode->left, callingFunction, parameterStack, paramNum))
+								return false;
+						}
+						else
+							return false;
+					}
+					else
+					{
+						std::cout << "Читаю конечный параметр. " << std::endl; //*currentNode->left->name << std::endl;
+						notEnd = false;
+						if (!readFuncCallParam(currentNode, callingFunction, parameterStack, paramNum))
+						{
+							return false;
+						}
+					}
+					currentNode = currentNode->right;
+					paramNum++;
+				}
+			}
+			ParamElement* currElem = nullptr;
+			while (parameterStack->size() != 0)
+			{
+				currElem = parameterStack->top();
+				if (*currElem->elemType == 1)
+				{
+					addingSequence->addMultiChar("mov EAX, ");
+					addingSequence->addString(currElem->name);
+					addingSequence->addMultiChar("\npush RAX\n");
+				}
+				else if ((*currElem->elemType == 2) || (*currElem->elemType = 3))
+				{
+					addingSequence->addMultiChar("lea RAX, ");
+					addingSequence->addString(currElem->name);
+					addingSequence->addMultiChar("\npush RAX\n");
+				}
+				else
+					return false;
+				parameterStack->pop();
+				delete currElem;
+			}
+			addingSequence->addMultiChar("call ");
+			addingSequence->addString(funcName);
+			addingSequence->addMultiChar("\n");
+		}
+		else
+			return false;
+	}
+	else
+		return false;
+	return true;
+}
 
 bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* addingSequence)
 {
@@ -284,18 +399,24 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 			{
 				if (!pointerRightUse)
 				{
+					addingSequence->addMultiChar(";Не указатель слева, не указатель справа");
 					addingSequence->addMultiChar(";Не указатель\n");
 					addingSequence->addMultiChar("mov EAX, ");
 					if ((!varUsed) && (!paramUsed))
+					{
 						addingSequence->addString(assignHead->right->value);
+						addingSequence->addMultiChar("\n"); //
+					}
 					else
 					{
 						addingSequence->addString(addrOfRight);
+						addingSequence->addMultiChar("\n"); //
 						delete addrOfRight;
 					}
 				}
 				else
 				{
+					addingSequence->addMultiChar(";Не указатель слева, указатель справа");
 					addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
 					addingSequence->addString(addrOfRight);
 					addingSequence->addMultiChar("\nmov EAX, [EBX]\n");
@@ -308,17 +429,23 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 			{
 				if (!pointerRightUse)
 				{
+					addingSequence->addMultiChar(";Указатель слева, не указатель справа");
 					addingSequence->addMultiChar("\nmov EAX, ");
 					if (!varUsed)
+					{
 						addingSequence->addString(assignHead->right->value);
+						addingSequence->addMultiChar("\n"); //
+					}
 					else
 					{
 						addingSequence->addString(addrOfRight);
+						addingSequence->addMultiChar("\n"); //
 						delete addrOfRight;
 					}
 				}
 				else
 				{
+					addingSequence->addMultiChar(";Указатель слева, указатель справа");
 					addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
 					addingSequence->addString(addrOfRight);
 					addingSequence->addMultiChar("\nmov EAX, [EBX]\n");
@@ -327,6 +454,15 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 				addingSequence->addString(varName);
 				addingSequence->addMultiChar("\nmov [RBX], EAX\n");
 			}
+		}
+		if (*assignHead->right->name == "FUNC_CALL")
+		{
+			std::cout << "В вызове функции для assign" << std::endl;
+			if (!genFuncCall(assignHead->right, operatingFunction, addingSequence))
+				return false;
+			addingSequence->addMultiChar("push RAX\nmov ");
+			addingSequence->addString(varName);
+			addingSequence->addMultiChar(", EAX\n");
 		}
 		if (*assignHead->right->name == "BIN_OP")
 		{
@@ -351,6 +487,10 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 						addingSequence->addMultiChar("\nmov EAX, [RBX]\npush RAX\n");
 					}
 				}
+				//if (*reversePolNot->top()->type == "FUNC_CALL")
+				//{
+				//	genFuncCall()
+				//}
 				if ((*reversePolNot->top()->type == "DECNUM") || (*reversePolNot->top()->type == "HEXNUM"))
 				{
 					addingSequence->addMultiChar(";Число\n");
@@ -523,87 +663,6 @@ bool genConsts()
 		assemblerConsts->addMultiChar("\n");
 	}
 	return true;
-}
-
-bool readFuncCallParams(SyntaxTree* paramHead, Function* operatingFunction, Stack<ParamElement*>* parameterStack, int paramNum)
-{
-	String* name = nullptr;
-	String* dataType = nullptr;
-	int elemType = 0;
-	if (paramHead->left != nullptr)
-	{
-		if (*paramHead->left->name == "ID")
-		{
-			name = paramHead->left->value;
-		}
-		else
-			return false;
-	}
-	else
-		return false;
-	if (paramHead->right != nullptr)
-	{
-		if (*paramHead->left->name == "TYPE")
-		{
-			dataType = paramHead->left->value;
-		}
-		else
-			return false;
-	}
-	else
-		return false;
-	elemType = operatingFunction->returnParamType(paramNum);
-	ParamElement* newCallParam = new ParamElement(name, dataType, elemType);
-	delete name;
-	delete dataType;
-	parameterStack->push(newCallParam);
-}
-
-bool genFuncCall(SyntaxTree* assignHead, Function* operatingFunction, String* addingSequence)
-{
-	if (assignHead != nullptr)
-	{
-		if (*assignHead->left->name == "ID")
-		{
-			int paramNum = 1;
-			String* funcName = assignHead->left->value;
-			SyntaxTree* currentNode = assignHead->right;
-			Stack<ParamElement*>* parameterStack = new Stack<ParamElement*>;
-			bool notEnd = true;
-			if (currentNode != nullptr)
-			{
-				while (currentNode != nullptr && notEnd)
-				{
-					if (*currentNode->name == "SEQ")
-					{
-						if (currentNode->left != nullptr)
-						{
-							std::cout << "Читаю параметры начала и середины" << std::endl;
-							if (!readFuncCallParams(currentNode->left, operatingFunction, parameterStack, paramNum))
-								return false;
-						}
-						else
-							return false;
-					}
-					else
-					{
-						std::cout << "Читаю конечный параметр. " << std::endl; //*currentNode->left->name << std::endl;
-						notEnd = false;
-						if (!readFuncCallParams(currentNode, operatingFunction, parameterStack, paramNum))
-						{
-							return false;
-						}
-					}
-					currentNode = currentNode->right;
-					paramNum++;
-				}
-			}
-		}
-		else
-			return false;
-	}
-	else
-		return false;
 }
 
 bool processUsing(SyntaxTree* currentNode, Function* inFunc, String* usingSequence)

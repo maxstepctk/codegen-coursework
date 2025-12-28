@@ -18,7 +18,7 @@ public:
 	{
 		name = new String(inpName);
 		functionSequence = new String();
-		functionSequence->addMultiChar("pop R12\nmov R13, RBP\nmov RBP, RSP\n");
+		functionSequence->addMultiChar("pop R12\nmov R13, RBP\nsub RSP, 8\nmov RBP, RSP\n");
 	}
 	Function(String* inpName, DynArray<ParamElement*>* inpParameterList)
 	{
@@ -140,7 +140,7 @@ public:
 
 	void genSeqEnd()
 	{
-		functionSequence->addMultiChar("mov R11, [RBP]\n");
+		functionSequence->addMultiChar("mov R11, [RBP]\n"); // сохраняем результат в регистре перед очисткой
 		int space = (localVarCount + parameterList->size()) * 8; // пока тип только integer
 		char buff[6];
 		sprintf(buff, "%d\n", space);
