@@ -2,7 +2,6 @@
 #include <locale>
 
 String* progName = nullptr;
-RegState regs;
 DynArray<VarElement*>* varList = new DynArray<VarElement*>;
 DynArray<ConstElement*>* constList = new DynArray<ConstElement*>;
 DynArray<Function*>* functionList = new DynArray<Function*>;
@@ -103,7 +102,6 @@ void readRPN(SyntaxTree* subTree, Stack<StatElement*>* storage, Function* usingF
 				sprintf(buff, "%d", paramNum);
 				valueToAdd->addMultiChar(buff);
 				pointerParamUse = true;
-				std::cout << "Устанавливаю для '" << *subTree->value << "' флаг pointerParamUse" << std::endl;
 				paramUsed = true;
 			}
 			else if (*requiredParam->elemType == 1)
@@ -148,10 +146,8 @@ bool readFuncCallParam(SyntaxTree* paramHead, Function* callingFunction, Stack<P
 	int elemType = 0;
 	if (paramHead->left != nullptr)
 	{
-		std::cout << "paramHead->left не nullptr" << std::endl;
 		if (*paramHead->left->name == "ID")
 		{
-			std::cout << "Слева ID" << std::endl;
 			name = paramHead->left->value;
 		}
 		else
@@ -161,10 +157,8 @@ bool readFuncCallParam(SyntaxTree* paramHead, Function* callingFunction, Stack<P
 		return false;
 	if (paramHead->right != nullptr)
 	{
-		std::cout << "paramHead->right не nullptr" << std::endl;
 		if (*paramHead->right->name == "TYPE")
 		{
-			std::cout << "Справа TYPE" << std::endl;
 			dataType = paramHead->left->value;
 		}
 		else
@@ -208,7 +202,6 @@ bool genFuncCall(SyntaxTree* callHead, Function* operatingFunction, String* addi
 					{
 						if (currentNode->left != nullptr)
 						{
-							std::cout << "Читаю параметры начала и середины" << std::endl;
 							if (!readFuncCallParam(currentNode->left, callingFunction, parameterStack, paramNum))
 								return false;
 						}
@@ -217,7 +210,6 @@ bool genFuncCall(SyntaxTree* callHead, Function* operatingFunction, String* addi
 					}
 					else
 					{
-						std::cout << "Читаю конечный параметр. " << std::endl; //*currentNode->left->name << std::endl;
 						notEnd = false;
 						if (!readFuncCallParam(currentNode, callingFunction, parameterStack, paramNum))
 						{
@@ -273,7 +265,6 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 			{
 				int varNum = operatingFunction->returnVarPlace(assignHead->left->value);
 				int paramNum = operatingFunction->returnParamPlace(assignHead->left->value);
-				std::cout << "varNum: " << varNum << " paramNum: " << paramNum << std::endl;
 				bool useVar = false;
 				bool useParam = false;
 				if (varNum != 0)
@@ -290,7 +281,6 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 				if (paramNum != 0)
 				{
 					ParamElement* elemForAssign = operatingFunction->returnParam(assignHead->left->value);
-					std::cout << "Имя элемента для использования: " << *elemForAssign->name << ", тип: " << *elemForAssign->elemType << std::endl;
 					if (*elemForAssign->elemType == 1)
 					{
 						char buf[6];
@@ -400,8 +390,6 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 			{
 				if (!pointerRightUse)
 				{
-					addingSequence->addMultiChar(";Не указатель слева, не указатель справа");
-					addingSequence->addMultiChar(";Не указатель\n");
 					addingSequence->addMultiChar("mov EAX, ");
 					if ((!varUsed) && (!paramUsed))
 					{
@@ -417,7 +405,6 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 				}
 				else
 				{
-					addingSequence->addMultiChar(";Не указатель слева, указатель справа");
 					addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
 					addingSequence->addString(addrOfRight);
 					addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov EAX, [RBX]\n");
@@ -430,7 +417,6 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 			{
 				if (!pointerRightUse)
 				{
-					addingSequence->addMultiChar(";Указатель слева, не указатель справа");
 					addingSequence->addMultiChar("\nmov EAX, ");
 					if (!varUsed)
 					{
@@ -446,7 +432,6 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 				}
 				else
 				{
-					addingSequence->addMultiChar(";Указатель слева, указатель справа");
 					addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
 					addingSequence->addString(addrOfRight);
 					addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov EAX, [RBX]\n");
@@ -458,7 +443,6 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 		}
 		if (*assignHead->right->name == "FUNC_CALL")
 		{
-			std::cout << "В вызове функции для assign" << std::endl;
 			if (!genFuncCall(assignHead->right, operatingFunction, addingSequence))
 				return false;
 			addingSequence->addMultiChar("push RAX\nmov ");
@@ -476,14 +460,12 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 				{
 					if (!(reversePolNot->top()->isPointer))
 					{
-						addingSequence->addMultiChar(";Не isPointer\n");
 						addingSequence->addMultiChar("mov EAX, ");
 						addingSequence->addString(reversePolNot->top()->value);
 						addingSequence->addMultiChar("\npush RAX\n");
 					}
 					else
 					{
-						addingSequence->addMultiChar("; Обратная польская запись. Указатель.\n");
 						addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
 						addingSequence->addString(reversePolNot->top()->value);
 						addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov EAX, [RBX]\npush RAX\n");
@@ -495,7 +477,6 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 				//}
 				if ((*reversePolNot->top()->type == "DECNUM") || (*reversePolNot->top()->type == "HEXNUM"))
 				{
-					addingSequence->addMultiChar(";Число\n");
 					addingSequence->addMultiChar("mov EAX, ");
 					addingSequence->addString(reversePolNot->top()->value);
 					addingSequence->addMultiChar("\npush RAX\n");
@@ -568,7 +549,6 @@ bool readFuncParams(SyntaxTree* paramHead, Function* funcToAdd)
 			return false;
 	else
 		return false;
-	std::cout << "Хочу создать элемент параметров" << std::endl;
 	ParamElement* paramToWrite = new ParamElement(paramName, paramType, elemType);
 	funcToAdd->addParameter(paramToWrite);
 	return true;
@@ -603,7 +583,7 @@ bool genWritelnCall(SyntaxTree* funcHead, Function* useInFunc, String* addingSeq
 				paramNum *= 8;
 				sprintf(buff, "%d", varNum);
 				addingSequence->addMultiChar(buff);
-				addingSequence->addMultiChar("\nmov EAX, [RBX]\n");
+				addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov EAX, [RBX]\n");
 				paramUsed = true;
 			}
 			else if (*requiredParam->elemType == 1)
@@ -701,7 +681,6 @@ bool genFuncDecl(SyntaxTree* funcHead)
 		SyntaxTree* splitPlace = funcHead->right;
 		SyntaxTree* currentNode = splitPlace->left;
 		bool notEnd = true;
-		std::cout << "Начинаю обход параметров" << std::endl;
 		if (currentNode != nullptr)
 		{
 			while (currentNode != nullptr && notEnd)
@@ -710,7 +689,6 @@ bool genFuncDecl(SyntaxTree* funcHead)
 				{
 					if (currentNode->left != nullptr)
 					{
-						std::cout << "Читаю параметры начала и середины" << std::endl;
 						if (!readFuncParams(currentNode->left, newFunction))
 							return false;
 					}
@@ -719,7 +697,6 @@ bool genFuncDecl(SyntaxTree* funcHead)
 				}
 				else
 				{
-					std::cout << "Читаю конечный параметр. " << std::endl; //*currentNode->left->name << std::endl;
 					notEnd = false;
 					if (!readFuncParams(currentNode, newFunction))
 					{
@@ -728,8 +705,6 @@ bool genFuncDecl(SyntaxTree* funcHead)
 				}
 				currentNode = currentNode->right;
 			}
-
-			newFunction->printParams();
 
 			currentNode = splitPlace->right;
 			if (currentNode != nullptr)
@@ -744,14 +719,12 @@ bool genFuncDecl(SyntaxTree* funcHead)
 						splitPlace = currentNode;
 						currentNode = currentNode->left;
 						notEnd = true;
-						std::cout << "Начинаю генерировать локальные переменные функции" << std::endl;
 						while ((currentNode != nullptr) && notEnd)
 						{
 							if (*currentNode->name == "SEQ")
 							{
 								if (currentNode->left != nullptr)
 								{
-									std::cout << "Левая нода существует" << std::endl;
 									if (!readVars(currentNode->left, newFunction))
 										return false;
 
@@ -761,20 +734,17 @@ bool genFuncDecl(SyntaxTree* funcHead)
 							}
 							else
 							{
-								std::cout << "Обработка конца" << std::endl;
 								notEnd = false;
 								if (!readVars(currentNode, newFunction))
 									return false;
 							}
 							currentNode = currentNode->right;
 						}
-						std::cout << "Чтение локальных переменных закончил. Выделяю для них память." << std::endl;
 						newFunction->genLocalVarSpace();
 						currentNode = splitPlace->right;
 					}
 					if (currentNode != nullptr)
 					{
-						std::cout << "на " << *currentNode->name << std::endl;
 						if (*currentNode->name == "COMPOUND_STMT")
 						{
 							notEnd = true;
@@ -786,7 +756,6 @@ bool genFuncDecl(SyntaxTree* funcHead)
 								{
 									if (currentNode->left != nullptr)
 									{
-										std::cout << "Читаю использование начала и середины" << std::endl;
 										if (!processUsing(currentNode->left, newFunction, funcSeq))
 											return false;
 									}
@@ -795,7 +764,6 @@ bool genFuncDecl(SyntaxTree* funcHead)
 								}
 								else
 								{
-									std::cout << "Читаю конечное использование. " << std::endl; //*currentNode->left->name << std::endl;
 									notEnd = false;
 									if (!processUsing(currentNode, newFunction, funcSeq))
 									{
@@ -910,7 +878,7 @@ int main()
 		std::cout << "\nЗапуск перевода дерева в код" << std::endl;
 		if (parseTree(tree1))
 		{
-			std::cout << "Дерево успешно транслировано" << std::endl;
+			std::cout << "Дерево успешно транслировано\n" << std::endl;
 			std::cout << "Имя программы: " << *progName << std::endl;
 			std::cout << "Размер массива переменных: " << varList->size() << std::endl;
 			for (int i = 0; i < varList->size(); i++)
@@ -922,6 +890,13 @@ int main()
 			{
 				std::cout << *(*constList)[i]->name << " " << *(*constList)[i]->type << " " << *(*constList)[i]->value << std::endl;
 			}
+			std::cout << "\n\nРазмер массива функций: " << functionList->size() << std::endl;
+			for (int i = 0; i < constList->size(); i++)
+			{
+				std::cout << "\nФункция " << *(*functionList)[i]->returnFuncName() << "\nПараметры:" << std::endl;
+				(*functionList)[i]->printParams();
+			}
+			std::cout << "Где 1 - по значению, 2 - var, 3 - const.\n" << std::endl;
 			genConsts();
 			if (useWriteln)
 				assemblerProgram->addMultiChar("includelib kernel32.lib\nextrn WriteFile : PROC\nextrn GetStdHandle : PROC\n\n");
@@ -995,18 +970,18 @@ int main()
 			}
 			assemblerProgram->addMultiChar("main proc\n");
 			assemblerProgram->addString(assemblerSequence);
-			assemblerProgram->addMultiChar("main endp\nend\n");
-			std::cout << "\nРезультирующая программа:\n" << *assemblerProgram << std::endl;
-			String fileName;
-			fileName.addString(progName);
-			fileName.addMultiChar(".asm");
-			assemblerProgram->writeToFile(fileName.toChar());
+			assemblerProgram->addMultiChar("ret\nmain endp\nend\n");
+			//std::cout << "\nРезультирующая программа:\n" << *assemblerProgram << std::endl;
+			String outFilename;
+			outFilename.addString(progName);
+			outFilename.addMultiChar(".asm");
+			assemblerProgram->writeToFile(outFilename.toChar());
+			std::cout << "Результат записан в файл '" << outFilename << "'." << std::endl;
 		}
 		else
 			std::cout << "Ошибка трансляции дерева" << std::endl;
 	}
 	else
 		std::cout << "Ошибка чтения дерева." << std::endl;
-	//td::cout << regs.returnRegName(10) << std::endl;
 	return 0;
 }

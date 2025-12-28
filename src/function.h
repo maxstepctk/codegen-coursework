@@ -81,15 +81,12 @@ public:
 			int size = parameterList->size();
 			for (int i = 0; i < size; i++)
 			{
-				std::cout << "Проверяю соответствие запрашиваемого '" << *param << "' имеющемуся '" << *(*parameterList)[i]->name << "'" << std::endl;
 				if (*(*parameterList)[i]->name == *param)
 				{
-					std::cout << "Соответствие найдено" << std::endl;
 					return i + 1;
 				}
 			}
 		}
-		std::cout << "Соответствие не найдено" << std::endl;
 		return 0;
 	}
 
