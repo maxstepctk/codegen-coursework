@@ -103,6 +103,7 @@ void readRPN(SyntaxTree* subTree, Stack<StatElement*>* storage, Function* usingF
 				sprintf(buff, "%d", paramNum);
 				valueToAdd->addMultiChar(buff);
 				pointerParamUse = true;
+				std::cout << "Устанавливаю для '" << *subTree->value << "' флаг pointerParamUse" << std::endl;
 				paramUsed = true;
 			}
 			else if (*requiredParam->elemType == 1)
@@ -297,8 +298,8 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 							delete varName;
 						varName = new String();
 						varName->addMultiChar("[RBP+");
-						varNum *= 8;
-						sprintf(buf, "%d", varNum);
+						paramNum *= 8;
+						sprintf(buf, "%d", paramNum);
 						varName->addMultiChar(buf);
 						varName->addMultiChar("]");
 						useParam = true;
@@ -309,8 +310,8 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 						if (useVar)
 							delete varName;
 						varName = new String();
-						varNum *= 8;
-						sprintf(buf, "%d", varNum);
+						paramNum *= 8;
+						sprintf(buf, "%d", paramNum);
 						varName->addMultiChar(buf);
 						usePointer = true;
 						useParam = true;
@@ -346,9 +347,9 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 			}
 			else
 			{
-				addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
+				addingSequence->addMultiChar("\nmov RBX, RBP\nadd RBX, ");
 				addingSequence->addString(varName);
-				addingSequence->addMultiChar("\nmov [RBX], EAX\n");
+				addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov [RBX], EAX\n");
 			}
 		}
 		if (*assignHead->right->name == "ID")
@@ -419,7 +420,7 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 					addingSequence->addMultiChar(";Не указатель слева, указатель справа");
 					addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
 					addingSequence->addString(addrOfRight);
-					addingSequence->addMultiChar("\nmov EAX, [EBX]\n");
+					addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov EAX, [RBX]\n");
 				}
 				addingSequence->addMultiChar("\nmov ");
 				addingSequence->addString(varName);
@@ -448,11 +449,11 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 					addingSequence->addMultiChar(";Указатель слева, указатель справа");
 					addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
 					addingSequence->addString(addrOfRight);
-					addingSequence->addMultiChar("\nmov EAX, [EBX]\n");
+					addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov EAX, [RBX]\n");
 				}
 				addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
 				addingSequence->addString(varName);
-				addingSequence->addMultiChar("\nmov [RBX], EAX\n");
+				addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov [RBX], EAX\n");
 			}
 		}
 		if (*assignHead->right->name == "FUNC_CALL")
@@ -482,9 +483,10 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 					}
 					else
 					{
+						addingSequence->addMultiChar("; Обратная польская запись. Указатель.\n");
 						addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
-						addingSequence->addString(varName);
-						addingSequence->addMultiChar("\nmov EAX, [RBX]\npush RAX\n");
+						addingSequence->addString(reversePolNot->top()->value);
+						addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov EAX, [RBX]\npush RAX\n");
 					}
 				}
 				//if (*reversePolNot->top()->type == "FUNC_CALL")
@@ -530,7 +532,7 @@ bool genAssigment(SyntaxTree* assignHead, Function* operatingFunction, String* a
 				addingSequence->addMultiChar("pop RAX\n");
 				addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
 				addingSequence->addString(varName);
-				addingSequence->addMultiChar("\nmov [RBX], EAX\n");
+				addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov [RBX], EAX\n");
 			}
 		}
 	}
@@ -671,8 +673,11 @@ bool processUsing(SyntaxTree* currentNode, Function* inFunc, String* usingSequen
 		if (!genAssigment(currentNode, inFunc, usingSequence))
 			return false;
 	if (*(currentNode->name) == "FUNC_CALL")
+	{
 		if (!genFuncCall(currentNode, inFunc, usingSequence))
 			return false;
+		usingSequence->addMultiChar("add RSP, 8\n");
+	}
 	if (*(currentNode->name) == "WRITELN")
 		if (!genWritelnCall(currentNode, inFunc, usingSequence))
 			return false;

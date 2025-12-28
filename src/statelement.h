@@ -10,11 +10,11 @@ public:
 
 	StatElement() {}
 
-	StatElement(String* inpType, String* inpValue, bool isPointer)
+	StatElement(String* inpType, String* inpValue, bool inpIsPointer)
 	{
 		type = new String(inpType);
 		value = new String(inpValue);
-		isPointer = isPointer;
+		isPointer = inpIsPointer;
 	}
 	~StatElement()
 	{
