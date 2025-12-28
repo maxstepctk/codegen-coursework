@@ -9,13 +9,13 @@ if (POLICY CMP0141)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 
-project ("codegen-coursework")
+project ("main")
 
 # Добавьте источник в исполняемый файл этого проекта.
-add_executable (codegen-coursework "src/codegen-coursework.cpp" "src/codegen-coursework.h" "src/dynarray.h" "src/string.h" "src/binarytree.h" "src/stack.h" "src/syntaxtree.h" "src/regstate.h" "src/varelement.h" "src/constelement.h" "src/statelement.h" "src/paramelement.h" "src/function.h")
+add_executable (main "src/main.cpp" "src/main.h"  "src/dynarray.h" "src/string.h" "src/binarytree.h" "src/stack.h" "src/syntaxtree.h" "src/regstate.h" "src/varelement.h" "src/constelement.h" "src/statelement.h" "src/paramelement.h" "src/function.h")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET codegen-coursework PROPERTY CXX_STANDARD 20)
+  set_property(TARGET main PROPERTY CXX_STANDARD 20)
 endif()
 
 # TODO: Добавьте тесты и целевые объекты, если это необходимо.
