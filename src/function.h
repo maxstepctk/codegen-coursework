@@ -137,13 +137,13 @@ public:
 
 	void genSeqEnd()
 	{
-		functionSequence->addMultiChar("mov R11, [RBP]\n"); // сохраняем результат в регистре перед очисткой
+		functionSequence->addMultiChar("mov EAX, [RBP]\n"); // сохраняем результат в регистре перед очисткой
 		int space = (localVarCount + parameterList->size()) * 8; // пока тип только integer
 		char buff[6];
 		sprintf(buff, "%d\n", space);
 		functionSequence->addMultiChar("add RSP, ");
 		functionSequence->addMultiChar(buff);
-		functionSequence->addMultiChar("mov RBP, R13\npush R11\npush R12\nret\n");
+		functionSequence->addMultiChar("mov RBP, R13\npush R12\nret\n");
 	}
 
 	String* returnFuncName()

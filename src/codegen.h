@@ -236,19 +236,106 @@ private:
 					}
 				}
 				ParamElement* currElem = nullptr;
+				addingSequence->addMultiChar("push R12\npush R13\n");
 				while (parameterStack->size() != 0)
 				{
 					currElem = parameterStack->top();
+					String* dataToTransfer = currElem->name;
+					bool paramUsed = false;
+					bool pointerParamInp = false;
+					bool varUsed = false;
+					int paramNum = 0;
+					int varNum = 0;
+					if (operatingFunction != nullptr)
+					{
+						paramNum = operatingFunction->returnParamPlace(dataToTransfer);
+						varNum = operatingFunction->returnVarPlace(dataToTransfer);
+					}
+					if (paramNum != 0)
+					{
+						ParamElement* requiredParam = operatingFunction->returnParam(dataToTransfer);
+						if ((*requiredParam->elemType == 2) || (*requiredParam->elemType == 3))
+						{
+							char buff[6];
+							paramNum *= 8;
+							dataToTransfer = new String();
+							sprintf(buff, "%d", paramNum);
+							dataToTransfer->addMultiChar(buff);
+							pointerParamInp = true;
+							paramUsed = true;
+						}
+						else if (*requiredParam->elemType == 1)
+						{
+							char buff[6];
+							dataToTransfer = new String();
+							dataToTransfer->addMultiChar("[RBP+");
+							paramNum *= 8;
+							sprintf(buff, "%d", paramNum);
+							dataToTransfer->addMultiChar(buff);
+							dataToTransfer->addMultiChar("]");
+							paramUsed = true;
+						}
+					}
+					if ((varNum != 0) && (!paramUsed))
+					{
+						char buff[6];
+						varNum *= 8;
+						dataToTransfer = new String();
+						dataToTransfer->addMultiChar("[RBP-");
+						sprintf(buff, "%d", varNum);
+						dataToTransfer->addMultiChar(buff);
+						dataToTransfer->addMultiChar("]");
+						varUsed = true;
+					}
+
 					if (*currElem->elemType == 1)
 					{
-						addingSequence->addMultiChar("mov EAX, ");
-						addingSequence->addString(currElem->name);
+						if (pointerParamInp)
+						{
+							std::cout << "Передаю указатель по значению в " << *callingFunction->returnFuncName() << std::endl;
+							addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
+							addingSequence->addString(dataToTransfer);
+							addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov EAX, [RBX]");
+						}
+						else
+						{
+							std::cout << "Передаю значение по значению в " << *callingFunction->returnFuncName() << std::endl;
+							addingSequence->addMultiChar("mov EAX, ");
+							addingSequence->addString(dataToTransfer);
+						}
 						addingSequence->addMultiChar("\npush RAX\n");
 					}
 					else if ((*currElem->elemType == 2) || (*currElem->elemType = 3))
 					{
-						addingSequence->addMultiChar("lea RAX, ");
-						addingSequence->addString(currElem->name);
+						if (pointerParamInp)
+						{
+							std::cout << "Передаю указатель как указатель в " << *callingFunction->returnFuncName() << std::endl;
+							addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
+							addingSequence->addString(dataToTransfer);
+							addingSequence->addMultiChar("\nmov RAX, [RBX]");
+						}
+						else if (paramUsed)
+						{
+							std::cout << "Передаю параметр по указателю " << *callingFunction->returnFuncName() << std::endl;
+							addingSequence->addMultiChar("mov RAX, RBP\nadd RAX, ");
+							char buff[6];
+							sprintf(buff, "%d", paramNum);
+							addingSequence->addMultiChar(buff);
+						}
+						else if (varUsed)
+						{
+							std::cout << "Передаю локальную переменную по указателю " << *callingFunction->returnFuncName() << std::endl;
+							addingSequence->addMultiChar("mov RAX, RBP\nsub RAX, ");
+							char buff[6];
+							sprintf(buff, "%d", varNum);
+							addingSequence->addMultiChar(buff);
+						}
+						else
+						{
+							std::cout << "Передаю переменную по указателю " << *callingFunction->returnFuncName() << std::endl;
+							addingSequence->addMultiChar("lea RAX, ");
+							addingSequence->addString(currElem->name);
+						}
 						addingSequence->addMultiChar("\npush RAX\n");
 					}
 					else
@@ -258,7 +345,7 @@ private:
 				}
 				addingSequence->addMultiChar("call ");
 				addingSequence->addString(funcName);
-				addingSequence->addMultiChar("\n");
+				addingSequence->addMultiChar("\npop R13\npop R12\npush RAX\n");
 			}
 			else
 				return false;
@@ -423,8 +510,9 @@ private:
 						addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
 						addingSequence->addString(addrOfRight);
 						addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov EAX, [RBX]\n");
+						delete addrOfRight;
 					}
-					addingSequence->addMultiChar("\nmov ");
+					addingSequence->addMultiChar("mov ");
 					addingSequence->addString(varName);
 					addingSequence->addMultiChar(", EAX\n");
 				}
@@ -460,9 +548,21 @@ private:
 			{
 				if (!genFuncCall(assignHead->right, operatingFunction, addingSequence))
 					return false;
-				addingSequence->addMultiChar("push RAX\nmov ");
-				addingSequence->addString(varName);
-				addingSequence->addMultiChar(", EAX\n");
+				if (!usePointer)
+				{
+					addingSequence->addMultiChar("pop RAX\n");
+					addingSequence->addMultiChar("mov ");
+					addingSequence->addString(varName);
+					addingSequence->addMultiChar(", EAX");
+					addingSequence->addMultiChar("\n");
+				}
+				else
+				{
+					addingSequence->addMultiChar("pop RAX\n");
+					addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
+					addingSequence->addString(varName);
+					addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov [RBX], EAX\n");
+				}
 			}
 			if (*assignHead->right->name == "BIN_OP")
 			{
@@ -596,9 +696,9 @@ private:
 					char buff[6];
 					addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
 					paramNum *= 8;
-					sprintf(buff, "%d", varNum);
+					sprintf(buff, "%d", paramNum);
 					addingSequence->addMultiChar(buff);
-					addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov EAX, [RBX]\n");
+					addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov EAX, [RBX]");
 					paramUsed = true;
 				}
 				else if (*requiredParam->elemType == 1)
@@ -606,9 +706,9 @@ private:
 					char buff[6];
 					addingSequence->addMultiChar("mov EAX, [RBP+");
 					paramNum *= 8;
-					sprintf(buff, "%d", varNum);
+					sprintf(buff, "%d", paramNum);
 					addingSequence->addMultiChar(buff);
-					addingSequence->addMultiChar("]\n");
+					addingSequence->addMultiChar("]");
 					paramUsed = true;
 				}
 			}
@@ -619,14 +719,14 @@ private:
 				addingSequence->addMultiChar("mov EAX, [RBP-");
 				sprintf(buff, "%d", varNum);
 				addingSequence->addMultiChar(buff);
-				addingSequence->addMultiChar("]\n");
+				addingSequence->addMultiChar("]");
 				varUsed = true;
 			}
 			if ((!paramUsed) && (!varUsed))
 				assemblerSequence->addString(funcHead->left->value);
 		}
-		assemblerSequence->addMultiChar("\npush RAX");
-		assemblerSequence->addMultiChar("\ncall writeln\n");
+		addingSequence->addMultiChar("\npush RAX");
+		addingSequence->addMultiChar("\ncall writeln\n");
 		return true;
 	}
 
