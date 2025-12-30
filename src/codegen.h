@@ -309,14 +309,12 @@ private:
 					{
 						if (pointerParamInp)
 						{
-							std::cout << "Передаю указатель как указатель в " << *callingFunction->returnFuncName() << std::endl;
 							addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
 							addingSequence->addString(dataToTransfer);
 							addingSequence->addMultiChar("\nmov RAX, [RBX]");
 						}
 						else if (paramUsed)
 						{
-							std::cout << "Передаю параметр по указателю " << *callingFunction->returnFuncName() << std::endl;
 							addingSequence->addMultiChar("mov RAX, RBP\nadd RAX, ");
 							char buff[6];
 							sprintf(buff, "%d", paramNum);
@@ -324,7 +322,6 @@ private:
 						}
 						else if (varUsed)
 						{
-							std::cout << "Передаю локальную переменную по указателю " << *callingFunction->returnFuncName() << std::endl;
 							addingSequence->addMultiChar("mov RAX, RBP\nsub RAX, ");
 							char buff[6];
 							sprintf(buff, "%d", varNum);
@@ -332,7 +329,6 @@ private:
 						}
 						else
 						{
-							std::cout << "Передаю переменную по указателю " << *callingFunction->returnFuncName() << std::endl;
 							addingSequence->addMultiChar("lea RAX, ");
 							addingSequence->addString(currElem->name);
 						}
