@@ -94,7 +94,7 @@ public:
 	{
 		if (localVarList != nullptr)
 		{
-			int size = parameterList->size();
+			int size = localVarList->size();
 			for (int i = 0; i < size; i++)
 			{
 				if (*(*localVarList)[i]->name == *var)
@@ -137,7 +137,7 @@ public:
 
 	void genSeqEnd()
 	{
-		functionSequence->addMultiChar("mov EAX, [RBP]\n"); // сохраняем результат в регистре перед очисткой
+		functionSequence->addMultiChar("mov EAX, [RBP]\n"); // пересылаем результат в регистр перед очисткой 
 		int space = (localVarCount + parameterList->size()) * 8; // пока тип только integer
 		char buff[6];
 		sprintf(buff, "%d\n", space);

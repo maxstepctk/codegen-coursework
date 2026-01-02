@@ -4,7 +4,7 @@
 #include <locale>
 
 #include "string.h"
-#include "binarytree.h"
+//#include "binarytree.h"
 #include "stack.h"
 #include "syntaxtree.h"
 #include "varelement.h"
@@ -292,14 +292,12 @@ private:
 					{
 						if (pointerParamInp)
 						{
-							std::cout << "Передаю указатель по значению в " << *callingFunction->returnFuncName() << std::endl;
 							addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
 							addingSequence->addString(dataToTransfer);
 							addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov EAX, [RBX]");
 						}
 						else
 						{
-							std::cout << "Передаю значение по значению в " << *callingFunction->returnFuncName() << std::endl;
 							addingSequence->addMultiChar("mov EAX, ");
 							addingSequence->addString(dataToTransfer);
 						}

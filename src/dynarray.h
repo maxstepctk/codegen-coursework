@@ -6,7 +6,7 @@ template <typename T>
 class DynArray
 {
 private:
-    T* array;
+    T* array = nullptr;
     T* temparray = nullptr;
     int sizearr = 0;
     int capacity = 5;
