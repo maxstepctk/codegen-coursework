@@ -54,7 +54,9 @@ private:
 			else
 				return false;
 			if (funcToAdd == nullptr)
+			{
 				varList->push_back(new VarElement(addingVarName, addingVarType));
+			}
 			else
 			{
 				funcToAdd->addVar(new VarElement(addingVarName, addingVarType));
@@ -859,7 +861,7 @@ private:
 								notEnd = true;
 								String* funcSeq = newFunction->returnFuncSeq();
 								currentNode = currentNode->left;
-								while (currentNode != nullptr && notEnd)
+								while ((currentNode != nullptr) && notEnd)
 								{
 									if (*currentNode->name == "SEQ")
 									{
@@ -933,8 +935,9 @@ private:
 		SyntaxTree* splitPlace = currentNode;
 		if (currentNode != nullptr)
 		{
+			bool notEnd = true;
 			currentNode = currentNode->left;
-			while (currentNode != nullptr)
+			while (currentNode != nullptr && notEnd)
 			{
 				if (*currentNode->name == "SEQ")
 				{
@@ -948,8 +951,11 @@ private:
 						return false;
 				}
 				else
+				{
+					notEnd = false;
 					if (!processDecls(currentNode))
 						return false;
+				}
 				currentNode = currentNode->right;
 			}
 			currentNode = splitPlace->right;
