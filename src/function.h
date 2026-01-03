@@ -10,7 +10,7 @@ private:
 	String* name = nullptr;
 	String* functionSequence = nullptr;
 	DynArray<ParamElement*>* parameterList = nullptr;
-	int localVarCount = 1; // первая - результат
+	int localVarCount = 0;
 	DynArray<VarElement*>* localVarList = nullptr;
 	String* funcType = nullptr;
 public:
@@ -138,7 +138,7 @@ public:
 	void genSeqEnd()
 	{
 		functionSequence->addMultiChar("mov EAX, [RBP]\n"); // пересылаем результат в регистр перед очисткой 
-		int space = (localVarCount + parameterList->size()) * 8; // пока тип только integer
+		int space = (localVarCount + parameterList->size()) * 8 + 8; // пока тип только integer
 		char buff[6];
 		sprintf(buff, "%d\n", space);
 		functionSequence->addMultiChar("add RSP, ");
