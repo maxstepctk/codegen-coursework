@@ -26,7 +26,7 @@ private:
 	String* assemblerFunctions = nullptr;
 	String* assemblerProgram = nullptr;
 	bool useWriteln = false;
-	int intSize = 2;
+	//int intSize = 2;
 
 	bool readVars(SyntaxTree* subTree, Function* funcToAdd)
 	{
@@ -445,8 +445,13 @@ private:
 				bool paramUsed = false;
 				bool pointerRightUse = false;
 				bool varUsed = false;
-				int paramNum = operatingFunction->returnParamPlace(assignHead->right->value);
-				int varNum = operatingFunction->returnVarPlace(assignHead->right->value);
+				int paramNum = 0;
+				int varNum = 0;
+				if (operatingFunction != nullptr)
+				{
+					paramNum = operatingFunction->returnParamPlace(assignHead->right->value);
+					varNum = operatingFunction->returnVarPlace(assignHead->right->value);
+				}
 				String* addrOfRight = nullptr;
 				if (paramNum != 0)
 				{
@@ -472,17 +477,17 @@ private:
 						addrOfRight->addMultiChar("]");
 						paramUsed = true;
 					}
-					if ((varNum != 0) && (!paramUsed))
-					{
-						char buff[6];
-						varNum *= 8;
-						addrOfRight = new String();
-						addrOfRight->addMultiChar("[RBP-");
-						sprintf(buff, "%d", varNum);
-						addrOfRight->addMultiChar(buff);
-						addrOfRight->addMultiChar("]");
-						varUsed = true;
-					}
+				}
+				if ((varNum != 0) && (!paramUsed))
+				{
+					char buff[6];
+					varNum *= 8;
+					addrOfRight = new String();
+					addrOfRight->addMultiChar("[RBP-");
+					sprintf(buff, "%d", varNum);
+					addrOfRight->addMultiChar(buff);
+					addrOfRight->addMultiChar("]");
+					varUsed = true;
 				}
 				if (!usePointer)
 				{
@@ -767,7 +772,6 @@ private:
 		{
 			if (!genFuncCall(currentNode, inFunc, usingSequence))
 				return false;
-			usingSequence->addMultiChar("add RSP, 8\n");
 		}
 		if (*(currentNode->name) == "WRITELN")
 			if (!genWritelnCall(currentNode, inFunc, usingSequence))

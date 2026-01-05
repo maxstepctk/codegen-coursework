@@ -20,15 +20,15 @@ public:
 		functionSequence = new String();
 		functionSequence->addMultiChar("pop R12\nmov R13, RBP\nsub RSP, 8\nmov RBP, RSP\n");
 	}
-	Function(String* inpName, DynArray<ParamElement*>* inpParameterList)
-	{
-		name = new String(inpName);
-		parameterList = new DynArray<ParamElement*>(*inpParameterList);
-		functionSequence = new String();
-		functionSequence->addMultiChar("pop R12\nmov R13, RBP\nmov RBP, RSP\n");
-		//int size = 
-		//for (int i)
-	}
+	//Function(String* inpName, DynArray<ParamElement*>* inpParameterList)
+	//{
+	//	name = new String(inpName);
+	//	parameterList = new DynArray<ParamElement*>(*inpParameterList);
+	//	functionSequence = new String();
+	//	functionSequence->addMultiChar("pop R12\nmov R13, RBP\nsub RSP, 8\nmov RBP, RSP\n");
+	//	//int size = 
+	//	//for (int i)
+	//}
 	~Function()
 	{
 		delete name;
