@@ -294,9 +294,10 @@ private:
 					{
 						if (pointerParamInp)
 						{
-							addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
+							addingSequence->addMultiChar("mov RBX, [RBP+");
+							std::cout << "Добавляю dataToTransfer '" << *dataToTransfer << "'" << std::endl;
 							addingSequence->addString(dataToTransfer);
-							addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov EAX, [RBX]");
+							addingSequence->addMultiChar("]\nmov EAX, [RBX]");
 						}
 						else
 						{
@@ -309,9 +310,10 @@ private:
 					{
 						if (pointerParamInp)
 						{
-							addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
+							addingSequence->addMultiChar("mov RAX, [RBP+");
+							std::cout << "Добавляю dataToTransfer '" << *dataToTransfer << "'" << std::endl;
 							addingSequence->addString(dataToTransfer);
-							addingSequence->addMultiChar("\nmov RAX, [RBX]");
+							addingSequence->addMultiChar("]");
 						}
 						else if (paramUsed)
 						{
@@ -435,9 +437,9 @@ private:
 				}
 				else
 				{
-					addingSequence->addMultiChar("\nmov RBX, RBP\nadd RBX, ");
+					addingSequence->addMultiChar("\nmov RBX, [RBP+");
 					addingSequence->addString(varName);
-					addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov [RBX], EAX\n");
+					addingSequence->addMultiChar("]\nmov [RBX], EAX\n");
 				}
 			}
 			if (*assignHead->right->name == "ID")
@@ -508,9 +510,9 @@ private:
 					}
 					else
 					{
-						addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
+						addingSequence->addMultiChar("mov RBX, [RBP+");
 						addingSequence->addString(addrOfRight);
-						addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov EAX, [RBX]\n");
+						addingSequence->addMultiChar("]\nmov EAX, [RBX]\n");
 						delete addrOfRight;
 					}
 					addingSequence->addMultiChar("mov ");
@@ -536,13 +538,13 @@ private:
 					}
 					else
 					{
-						addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
+						addingSequence->addMultiChar("mov RBX, [RBP+");
 						addingSequence->addString(addrOfRight);
-						addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov EAX, [RBX]\n");
+						addingSequence->addMultiChar("]\nmov EAX, [RBX]\n");
 					}
-					addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
+					addingSequence->addMultiChar("mov RBX, [RBP+");
 					addingSequence->addString(varName);
-					addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov [RBX], EAX\n");
+					addingSequence->addMultiChar("]\nmov [RBX], EAX\n");
 				}
 			}
 			if (*assignHead->right->name == "FUNC_CALL")
@@ -560,9 +562,9 @@ private:
 				else
 				{
 					addingSequence->addMultiChar("pop RAX\n");
-					addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
+					addingSequence->addMultiChar("mov RBX, [RBP+");
 					addingSequence->addString(varName);
-					addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov [RBX], EAX\n");
+					addingSequence->addMultiChar("]\nmov [RBX], EAX\n");
 				}
 			}
 			if (*assignHead->right->name == "BIN_OP")
@@ -582,9 +584,9 @@ private:
 						}
 						else
 						{
-							addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
+							addingSequence->addMultiChar("mov RBX, [RBP+");
 							addingSequence->addString(reversePolNot->top()->value);
-							addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov EAX, [RBX]\npush RAX\n");
+							addingSequence->addMultiChar("]\nmov EAX, [RBX]\npush RAX\n");
 						}
 					}
 					//if (*reversePolNot->top()->type == "FUNC_CALL")
@@ -627,9 +629,9 @@ private:
 				else
 				{
 					addingSequence->addMultiChar("pop RAX\n");
-					addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
+					addingSequence->addMultiChar("mov RBX, [RBP+");
 					addingSequence->addString(varName);
-					addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov [RBX], EAX\n");
+					addingSequence->addMultiChar("]\nmov [RBX], EAX\n");
 				}
 			}
 		}
@@ -695,11 +697,12 @@ private:
 				if ((*requiredParam->elemType == 2) || (*requiredParam->elemType == 3))
 				{
 					char buff[6];
-					addingSequence->addMultiChar("mov RBX, RBP\nadd RBX, ");
+					addingSequence->addMultiChar("mov RBX, [RBP+");
 					paramNum *= 8;
 					sprintf(buff, "%d", paramNum);
 					addingSequence->addMultiChar(buff);
-					addingSequence->addMultiChar("\nmov RBX, [RBX]\nmov EAX, [RBX]");
+					std::cout << "Вывожу по '" << *buff << std::endl;
+					addingSequence->addMultiChar("]\nmov EAX, [RBX]");
 					paramUsed = true;
 				}
 				else if (*requiredParam->elemType == 1)
