@@ -522,7 +522,7 @@ private:
 					if (!pointerRightUse)
 					{
 						addingSequence->addMultiChar("\nmov EAX, ");
-						if (!varUsed)
+						if ((!varUsed) && (!paramUsed))
 						{
 							addingSequence->addString(assignHead->right->value);
 							addingSequence->addMultiChar("\n"); //
