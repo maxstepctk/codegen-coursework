@@ -295,7 +295,6 @@ private:
 						if (pointerParamInp)
 						{
 							addingSequence->addMultiChar("mov RBX, [RBP+");
-							std::cout << "Добавляю dataToTransfer '" << *dataToTransfer << "'" << std::endl;
 							addingSequence->addString(dataToTransfer);
 							addingSequence->addMultiChar("]\nmov EAX, [RBX]");
 						}
@@ -701,7 +700,6 @@ private:
 					paramNum *= 8;
 					sprintf(buff, "%d", paramNum);
 					addingSequence->addMultiChar(buff);
-					std::cout << "Вывожу по '" << *buff << std::endl;
 					addingSequence->addMultiChar("]\nmov EAX, [RBX]");
 					paramUsed = true;
 				}
