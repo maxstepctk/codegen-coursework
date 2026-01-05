@@ -238,7 +238,8 @@ private:
 					}
 				}
 				ParamElement* currElem = nullptr;
-				addingSequence->addMultiChar("push R12\npush R13\n");
+				if (operatingFunction != nullptr)
+					addingSequence->addMultiChar("push R12\npush R13\n");
 				while (parameterStack->size() != 0)
 				{
 					currElem = parameterStack->top();
@@ -330,7 +331,7 @@ private:
 						else
 						{
 							addingSequence->addMultiChar("lea RAX, ");
-							addingSequence->addString(currElem->name);
+							addingSequence->addString(dataToTransfer); // currElem->name
 						}
 						addingSequence->addMultiChar("\npush RAX\n");
 					}
@@ -341,7 +342,10 @@ private:
 				}
 				addingSequence->addMultiChar("call ");
 				addingSequence->addString(funcName);
-				addingSequence->addMultiChar("\npop R13\npop R12\npush RAX\n");
+				if (operatingFunction != nullptr)
+					addingSequence->addMultiChar("\npop R13\npop R12\n");
+				else
+					addingSequence->addMultiChar("\n");
 			}
 			else
 				return false;
@@ -551,7 +555,7 @@ private:
 					return false;
 				if (!usePointer)
 				{
-					addingSequence->addMultiChar("pop RAX\n");
+					//addingSequence->addMultiChar("pop RAX\n");
 					addingSequence->addMultiChar("mov ");
 					addingSequence->addString(varName);
 					addingSequence->addMultiChar(", EAX");
@@ -559,7 +563,7 @@ private:
 				}
 				else
 				{
-					addingSequence->addMultiChar("pop RAX\n");
+					//addingSequence->addMultiChar("pop RAX\n");
 					addingSequence->addMultiChar("mov RBX, [RBP+");
 					addingSequence->addString(varName);
 					addingSequence->addMultiChar("]\nmov [RBX], EAX\n");
