@@ -310,7 +310,6 @@ private:
 						if (pointerParamInp)
 						{
 							addingSequence->addMultiChar("mov RAX, [RBP+");
-							std::cout << "Добавляю dataToTransfer '" << *dataToTransfer << "'" << std::endl;
 							addingSequence->addString(dataToTransfer);
 							addingSequence->addMultiChar("]");
 						}
