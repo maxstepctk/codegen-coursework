@@ -525,15 +525,27 @@ private:
 				{
 					if (!pointerRightUse)
 					{
-						addingSequence->addMultiChar("\nmov EAX, ");
 						if ((!varUsed) && (!paramUsed))
 						{
+							addingSequence->addMultiChar("\nlea RAX, ");
 							addingSequence->addString(assignHead->right->value);
 							addingSequence->addMultiChar("\n"); //
 						}
-						else
+						else if (varUsed)
 						{
-							addingSequence->addString(addrOfRight);
+							char buff[6];
+							addingSequence->addMultiChar("\nmov RAX, RBP\nsub RAX, ");
+							sprintf(buff, "%d", varNum);
+							addingSequence->addMultiChar(buff);
+							addingSequence->addMultiChar("\n"); //
+							delete addrOfRight;
+						}
+						else if (paramUsed)
+						{
+							char buff[6];
+							addingSequence->addMultiChar("\nmov RAX, RBP\nadd RAX, ");
+							sprintf(buff, "%d", paramNum);
+							addingSequence->addMultiChar(buff);
 							addingSequence->addMultiChar("\n"); //
 							delete addrOfRight;
 						}
@@ -544,9 +556,9 @@ private:
 						addingSequence->addString(addrOfRight);
 						addingSequence->addMultiChar("]\n");
 					}
-					addingSequence->addMultiChar("mov RBX, [RBP+");
+					addingSequence->addMultiChar("mov [RBP+");
 					addingSequence->addString(varName);
-					addingSequence->addMultiChar("]\nmov [RBX], RAX\n");
+					addingSequence->addMultiChar("], RAX\n");
 				}
 			}
 			if (*assignHead->right->name == "FUNC_CALL")
