@@ -1029,9 +1029,9 @@ public:
 					(*functionList)[i]->printParams();
 				}
 				std::cout << "Где 1 - по значению, 2 - var, 3 - const.\n" << std::endl;
-				genConsts();
 				if (useWriteln)
 					assemblerProgram->addMultiChar("includelib kernel32.lib\nextrn WriteFile : PROC\nextrn GetStdHandle : PROC\n\n");
+				genConsts();
 				assemblerProgram->addString(assemblerConsts);
 				assemblerProgram->addMultiChar("\n");
 				assemblerProgram->addMultiChar(".data\n");
