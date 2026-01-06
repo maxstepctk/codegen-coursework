@@ -540,13 +540,13 @@ private:
 					}
 					else
 					{
-						addingSequence->addMultiChar("mov RBX, [RBP+");
+						addingSequence->addMultiChar("mov RAX, [RBP+");
 						addingSequence->addString(addrOfRight);
-						addingSequence->addMultiChar("]\nmov EAX, [RBX]\n");
+						addingSequence->addMultiChar("]\n");
 					}
 					addingSequence->addMultiChar("mov RBX, [RBP+");
 					addingSequence->addString(varName);
-					addingSequence->addMultiChar("]\nmov [RBX], EAX\n");
+					addingSequence->addMultiChar("]\nmov [RBX], RAX\n");
 				}
 			}
 			if (*assignHead->right->name == "FUNC_CALL")
